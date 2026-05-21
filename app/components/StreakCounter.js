@@ -61,13 +61,13 @@ export default function StreakCounter({ onOpenDashboard }) {
           {menuOpen && (
             <>
               {/* Invisible backdrop to dismiss the dropdown */}
-              <div 
-                className="fixed inset-0 z-40 cursor-default" 
+              <div
+                className="fixed inset-0 z-[60] cursor-default"
                 onClick={() => setMenuOpen(false)}
               />
-              
+
               {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-36 bg-gray-950/95 border border-white/10 rounded-xl py-1 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+              <div className="absolute right-0 mt-2 w-36 bg-gray-950/95 border border-white/10 rounded-xl py-1 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150 z-[70] sm:right-0 right-[-8px]">
                 <button 
                   onClick={() => {
                     setMenuOpen(false);
