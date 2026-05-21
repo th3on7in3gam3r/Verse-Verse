@@ -269,6 +269,17 @@ function MainApp() {
         </div>
       </div>
 
+      {/* Verse of the Day — daily streak (For You, first card) */}
+      {!isSearching && activeCategoryIndex === 0 && currentVerseIndex === 0 && (
+        <div
+          className={`absolute inset-x-0 top-14 md:top-16 z-50 transition-all duration-500 ease-out ${
+            shouldHideHeader ? 'opacity-90 translate-y-0' : 'opacity-100'
+          }`}
+        >
+          <VerseOfTheDay />
+        </div>
+      )}
+
       {/* Cycle message */}
       {cycleMessage && (
         <div className="absolute top-20 left-0 w-full px-4 z-40 pointer-events-none">

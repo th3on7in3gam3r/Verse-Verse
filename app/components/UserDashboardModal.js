@@ -8,6 +8,15 @@ import {
 } from 'lucide-react';
 import versesData from '../../data/verses.json';
 import { useAuth } from '../context/AuthContext';
+import {
+  getStreakData,
+  getWeekCompletionMap,
+  getMilestoneLabel,
+  getNextMilestone,
+  isStreakAtRisk,
+  isTodayCompleted,
+  STREAK_UPDATED_EVENT,
+} from '../../lib/streak';
 
 // ─── Emotion colour map ───────────────────────────────────────────────────────
 function getEmotionColors(feel) {
@@ -23,26 +32,60 @@ function getEmotionColors(feel) {
 }
 
 // ─── TAB 1: Stats ─────────────────────────────────────────────────────────────
-function StatsTab({ streakCount, weeklyDates, weeklyCompletions, totalPrayersSaved, totalLikedVerses, moodStats, prefersVideo, toggleVideoPreference }) {
+function StatsTab({ streakCount, weeklyDates, weeklyCompletions, totalPrayersSaved, totalLikedVerses, moodStats, prefersVideo, toggleVideoPreference, todayDone, streakAtRisk, nextMilestone, milestoneLabel }) {
   const daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const todayIndex = new Date().getDay();
+  const progressPct = nextMilestone
+    ? Math.min(100, Math.round((streakCount / nextMilestone.target) * 100))
+    : 100;
 
   return (
     <div className="space-y-4">
+      {streakAtRisk && (
+        <div className="rounded-2xl border border-amber-400/35 bg-gradient-to-r from-amber-500/15 to-orange-500/10 px-4 py-3 flex items-center gap-3">
+          <Flame size={18} className="text-amber-400 fill-amber-400/50 shrink-0 animate-pulse" />
+          <div>
+            <p className="text-xs font-bold text-amber-100">Streak at risk tonight</p>
+            <p className="text-[10px] text-amber-200/70 mt-0.5">Complete today&apos;s Verse of the Day before midnight to keep your {streakCount}-day streak.</p>
+          </div>
+        </div>
+      )}
+
       {/* Streak + Milestones row */}
       <div className="grid grid-cols-2 gap-3">
         {/* Streak */}
-        <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-orange-500/15 via-amber-500/8 to-slate-800/60 border border-orange-400/25 rounded-2xl p-4 relative overflow-hidden group hover:border-orange-400/40 transition-all duration-300">
+        <div className="col-span-2 sm:col-span-1 hero-glass-effect bg-gradient-to-br from-orange-500/15 via-amber-500/8 to-slate-800/60 border border-orange-400/25 rounded-2xl p-4 relative overflow-hidden group hover:border-orange-400/40 transition-all duration-300">
           <div className="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none">
             <Flame size={72} className="fill-orange-400" />
           </div>
           <span className="text-[10px] uppercase font-bold tracking-widest text-orange-300 flex items-center gap-1.5 mb-1">
-            <Flame size={11} className="fill-orange-300" /> Streak
+            <Flame size={11} className="fill-orange-300" /> Daily Streak
           </span>
           <h3 className="text-4xl font-black text-white tracking-tight flex items-baseline gap-2">
             {streakCount}
             <span className="text-[10px] font-bold text-orange-200 uppercase tracking-widest bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-400/30">Days</span>
           </h3>
+          <p className="text-[10px] text-slate-400 mt-1">{milestoneLabel}</p>
+
+          {nextMilestone && (
+            <div className="mt-3">
+              <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <span>Next: {nextMilestone.label}</span>
+                <span className="text-orange-300">{nextMilestone.remaining} to go</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <p className={`mt-3 text-[10px] font-medium ${todayDone ? 'text-emerald-300/90' : 'text-white/45'}`}>
+            {todayDone ? '✓ Today\u2019s reflection complete' : 'Complete Verse of the Day on the home feed'}
+          </p>
+
           {/* Weekly ring */}
           <div className="mt-4">
             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
@@ -56,12 +99,15 @@ function StatsTab({ streakCount, weeklyDates, weeklyCompletions, totalPrayersSav
                   <div key={idx} className="flex flex-col items-center gap-1 flex-1">
                     <span className={`text-[8px] font-bold ${isToday ? 'text-orange-300' : 'text-slate-600'}`}>{day[0]}</span>
                     <div className={`w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-300 ${
-                      done ? 'bg-orange-500/25 border border-orange-400/50 shadow-[0_0_8px_rgba(251,146,60,0.2)]'
-                           : 'bg-white/[0.04] border border-white/8'
+                      done
+                        ? 'bg-orange-500/25 border border-orange-400/50 shadow-[0_0_8px_rgba(251,146,60,0.25)]'
+                        : isToday
+                          ? 'bg-amber-500/10 border border-amber-400/30 ring-1 ring-amber-400/20'
+                          : 'bg-white/[0.04] border border-white/8'
                     }`}>
                       {done
                         ? <Flame size={11} className="text-orange-300 fill-orange-400/40" />
-                        : <span className="text-slate-700 text-[10px]">·</span>}
+                        : <span className={`text-[10px] ${isToday ? 'text-amber-400/60' : 'text-slate-700'}`}>·</span>}
                     </div>
                   </div>
                 );
@@ -88,9 +134,7 @@ function StatsTab({ streakCount, weeklyDates, weeklyCompletions, totalPrayersSav
               <p className="text-2xl font-black text-white mt-0.5">{totalLikedVerses}</p>
             </div>
             <div className="bg-white/[0.06] border border-white/10 p-2.5 rounded-xl col-span-2 flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-white">
-                {streakCount >= 7 ? '🌟 Spiritual Devotee' : streakCount >= 3 ? '🔥 Faithful Tracker' : '🌱 Mindful Starter'}
-              </span>
+              <span className="text-[10px] font-semibold text-white">{milestoneLabel}</span>
             </div>
           </div>
         </div>
@@ -323,6 +367,10 @@ export default function UserDashboardModal({ isOpen, onClose, onOpenShareCard })
   const [journalEntries, setJournalEntries] = useState([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [streakCount, setStreakCount]       = useState(0);
+  const [todayDone, setTodayDone]           = useState(false);
+  const [streakAtRisk, setStreakAtRisk]     = useState(false);
+  const [nextMilestone, setNextMilestone]   = useState(null);
+  const [milestoneLabel, setMilestoneLabel] = useState('');
   const [moodStats, setMoodStats]           = useState({});
   const [weeklyDates, setWeeklyDates]       = useState([]);
   const [weeklyCompletions, setWeeklyCompletions] = useState({});
@@ -364,18 +412,22 @@ export default function UserDashboardModal({ isOpen, onClose, onOpenShareCard })
       }).catch(err => { console.error(err); setSavingNewEntry(false); });
   };
 
+  const refreshStreakStats = () => {
+    const { count } = getStreakData();
+    setStreakCount(count);
+    setTodayDone(isTodayCompleted());
+    setStreakAtRisk(isStreakAtRisk());
+    setMilestoneLabel(getMilestoneLabel(count));
+    setNextMilestone(getNextMilestone(count));
+    const { dates, completions } = getWeekCompletionMap();
+    setWeeklyDates(dates);
+    setWeeklyCompletions(completions);
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     setSheetSnap('full');
-    const streakData = localStorage.getItem('verse_streak');
-    if (streakData) setStreakCount(JSON.parse(streakData).count || 0);
-    const dates = [];
-    const today = new Date(); const dow = today.getDay();
-    for (let i = 0; i < 7; i++) { const d = new Date(today); d.setDate(today.getDate() - dow + i); dates.push(d.toISOString().split('T')[0]); }
-    setWeeklyDates(dates);
-    const completions = {};
-    dates.forEach(d => { completions[d] = localStorage.getItem('votd_completed_' + d) === 'true'; });
-    setWeeklyCompletions(completions);
+    refreshStreakStats();
     const savedIds = JSON.parse(localStorage.getItem('savedVerses') || '[]');
     setLikedVerses(versesData.filter(v => savedIds.includes(v.id)));
     setLoadingEntries(true);
@@ -387,6 +439,10 @@ export default function UserDashboardModal({ isOpen, onClose, onOpenShareCard })
       setMoodStats(counts);
       setLoadingEntries(false);
     }).catch(err => { console.error(err); setLoadingEntries(false); });
+
+    const onStreakUpdated = () => refreshStreakStats();
+    window.addEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -397,6 +453,7 @@ export default function UserDashboardModal({ isOpen, onClose, onOpenShareCard })
   // Shared tab content props
   const tabProps = {
     streakCount, weeklyDates, weeklyCompletions, totalPrayersSaved, totalLikedVerses,
+    todayDone, streakAtRisk, nextMilestone, milestoneLabel,
     moodStats, prefersVideo, toggleVideoPreference,
     likedVerses, onClose, onOpenShareCard,
     journalEntries, loadingEntries, editingEntryId, setEditingEntryId,
