@@ -1,68 +1,164 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { X, Download, Copy, Share2, AlignLeft, AlignCenter, AlignRight, Type, Palette, ShieldAlert, Sliders, Layers, Sparkles } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  X, Download, Copy, Share2, AlignLeft, AlignCenter, AlignRight, Sparkles, Wand2,
+} from 'lucide-react';
 
 const BACKGROUNDS = [
-  { id: 'midnight', name: 'Midnight', value: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%)' },
-  { id: 'aurora', name: 'Aurora Deep', value: 'linear-gradient(135deg, #064e3b 0%, #022c22 50%, #0f172a 100%)' },
-  { id: 'crimson', name: 'Crimson Night', value: 'linear-gradient(135deg, #4c0519 0%, #1e0010 50%, #0f172a 100%)' },
-  { id: 'amber', name: 'Amber Glow', value: 'linear-gradient(135deg, #451a03 0%, #1c1917 50%, #0c0a09 100%)' },
-  { id: 'obsidian', name: 'Obsidian Jet', value: 'linear-gradient(135deg, #09090b 0%, #18181b 100%)' },
-  { id: 'royal', name: 'Royal Velvet', value: 'linear-gradient(135deg, #1e3a8a 0%, #3b0764 50%, #0f172a 100%)' }
+  { id: 'lavender', name: 'Lavender', value: 'linear-gradient(145deg, #6d28d9 0%, #9333ea 45%, #db2777 100%)' },
+  { id: 'ocean', name: 'Ocean', value: 'linear-gradient(145deg, #0369a1 0%, #4f46e5 55%, #7c3aed 100%)' },
+  { id: 'sunset', name: 'Sunset', value: 'linear-gradient(145deg, #ea580c 0%, #dc2626 50%, #9d174d 100%)' },
+  { id: 'aurora', name: 'Aurora', value: 'linear-gradient(145deg, #0d9488 0%, #2563eb 50%, #6d28d9 100%)' },
+  { id: 'royal', name: 'Royal', value: 'linear-gradient(145deg, #4338ca 0%, #7e22ce 50%, #be185d 100%)' },
+  { id: 'amber', name: 'Golden', value: 'linear-gradient(145deg, #b45309 0%, #c2410c 40%, #7c2d12 100%)' },
+  { id: 'midnight', name: 'Midnight', value: 'linear-gradient(145deg, #312e81 0%, #4c1d95 50%, #1e1b4b 100%)' },
+  { id: 'slate', name: 'Slate', value: 'linear-gradient(145deg, #475569 0%, #334155 50%, #1e293b 100%)' },
+];
+
+const MOOD_PRESETS = [
+  {
+    id: 'radiant',
+    name: 'Radiant',
+    bg: BACKGROUNDS[0],
+    border: 'gold',
+    texture: 'mesh',
+    font: 'serif',
+  },
+  {
+    id: 'calm',
+    name: 'Calm',
+    bg: BACKGROUNDS[1],
+    border: 'glass',
+    texture: 'none',
+    font: 'sans',
+  },
+  {
+    id: 'bold',
+    name: 'Bold',
+    bg: BACKGROUNDS[2],
+    border: 'neon',
+    texture: 'grain',
+    font: 'serif',
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    bg: BACKGROUNDS[7],
+    border: 'none',
+    texture: 'none',
+    font: 'sans',
+  },
 ];
 
 const FONTS = [
-  { id: 'serif', name: 'Serif (Classic)', class: 'font-serif' },
-  { id: 'sans', name: 'Sans-Serif (Modern)', class: 'font-sans' },
-  { id: 'mono', name: 'Monospace (Clean)', class: 'font-mono' }
+  { id: 'serif', name: 'Serif', class: 'font-serif' },
+  { id: 'sans', name: 'Sans', class: 'font-sans' },
+  { id: 'mono', name: 'Mono', class: 'font-mono' },
 ];
 
 const BORDERS = [
-  { id: 'none', name: 'Minimalist', class: 'border-0' },
-  { id: 'glass', name: 'Glass Frame', class: 'border border-white/20 bg-white/[0.04] backdrop-blur-md' },
-  { id: 'neon', name: 'Teal Halo', class: 'border border-teal-500/30 shadow-[0_0_25px_rgba(20,184,166,0.15)] bg-black/20' },
-  { id: 'gold', name: 'Gold Halo', class: 'border border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.15)] bg-black/20' }
+  { id: 'none', name: 'Minimal', class: 'border-0' },
+  { id: 'glass', name: 'Glass', class: 'border border-white/25 bg-white/10 backdrop-blur-md' },
+  { id: 'neon', name: 'Teal Halo', class: 'border border-teal-400/40 shadow-[0_0_30px_rgba(45,212,191,0.2)] bg-white/5' },
+  { id: 'gold', name: 'Gold Halo', class: 'border border-amber-400/45 shadow-[0_0_30px_rgba(251,191,36,0.22)] bg-white/5' },
 ];
 
 const TEXTURES = [
-  { id: 'none', name: 'Smooth Glass' },
-  { id: 'grain', name: 'Organic Grain' },
-  { id: 'mesh', name: 'Cosmic Mesh' },
-  { id: 'stripes', name: 'Fine Lines' }
+  { id: 'none', name: 'Smooth' },
+  { id: 'grain', name: 'Grain' },
+  { id: 'mesh', name: 'Cosmic' },
+  { id: 'stripes', name: 'Lines' },
 ];
 
+function StudioLabel({ children }) {
+  return (
+    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 block mb-2">
+      {children}
+    </label>
+  );
+}
+
+function ChipButton({ active, onClick, children, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+        active
+          ? 'card-studio-chip-active'
+          : 'bg-white/10 border-white/15 text-white/80 hover:bg-white/15 hover:border-white/25 hover:text-white'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="rounded-2xl border border-white/12 bg-white/[0.06] p-4 backdrop-blur-sm">
+      {title && <StudioLabel>{title}</StudioLabel>}
+      {children}
+    </section>
+  );
+}
+
 export default function CardBuilderModal({ isOpen, onClose, verse }) {
-  const [bgMode, setBgMode] = useState('presets'); // 'presets' | 'custom'
+  const [bgMode, setBgMode] = useState('presets');
   const [background, setBackground] = useState(BACKGROUNDS[0]);
-  const [customColor1, setCustomColor1] = useState('#3b0764');
-  const [customColor2, setCustomColor2] = useState('#0f172a');
+  const [customColor1, setCustomColor1] = useState('#7c3aed');
+  const [customColor2, setCustomColor2] = useState('#2563eb');
   const [customAngle, setCustomAngle] = useState(135);
-  const [selectedTexture, setSelectedTexture] = useState('none');
-  
+  const [selectedTexture, setSelectedTexture] = useState('mesh');
   const [fontFamily, setFontFamily] = useState(FONTS[0]);
   const [fontSize, setFontSize] = useState(26);
   const [alignment, setAlignment] = useState('center');
-  const [borderStyle, setBorderStyle] = useState(BORDERS[1]);
+  const [borderStyle, setBorderStyle] = useState(BORDERS[3]);
+  const [activeMood, setActiveMood] = useState('radiant');
   const [isExporting, setIsExporting] = useState(false);
-  
+
   const cardRef = useRef(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   if (!isOpen || !verse) return null;
+
+  const cardBackground =
+    bgMode === 'presets'
+      ? background.value
+      : `linear-gradient(${customAngle}deg, ${customColor1} 0%, ${customColor2} 100%)`;
+
+  const applyMood = (mood) => {
+    setActiveMood(mood.id);
+    setBackground(mood.bg);
+    setBgMode('presets');
+    setBorderStyle(BORDERS.find((b) => b.id === mood.border) || BORDERS[1]);
+    setSelectedTexture(mood.texture);
+    setFontFamily(FONTS.find((f) => f.id === mood.font) || FONTS[0]);
+  };
+
+  const exportCard = async () => {
+    const { toPng } = await import('html-to-image');
+    return toPng(cardRef.current, {
+      pixelRatio: 2.5,
+      cacheBust: true,
+      style: { transform: 'scale(1)' },
+    });
+  };
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setIsExporting(true);
     try {
-      const { toPng } = await import('html-to-image');
-      // Render at 2.5x pixel ratio for high definition clarity on mobile devices
-      const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2.5,
-        cacheBust: true,
-        style: {
-          transform: 'scale(1)',
-        }
-      });
+      const dataUrl = await exportCard();
       const link = document.createElement('a');
       link.download = `verseverse-${verse.reference.replace(/[\s:]+/g, '-')}.png`;
       link.href = dataUrl;
@@ -79,24 +175,18 @@ export default function CardBuilderModal({ isOpen, onClose, verse }) {
     if (!cardRef.current) return;
     setIsExporting(true);
     try {
-      const { toPng } = await import('html-to-image');
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2.5, cacheBust: true });
+      const dataUrl = await exportCard();
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      
-      if (navigator.clipboard && navigator.clipboard.write) {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            [blob.type]: blob
-          })
-        ]);
-        alert('Card image copied to clipboard!');
+      if (navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        alert('Card copied to clipboard.');
       } else {
-        alert('Clipboard copy not supported on this browser. Try downloading the card instead.');
+        alert('Clipboard not supported — try Download instead.');
       }
     } catch (err) {
-      console.error('Error copying card image:', err);
-      alert('Could not copy image. Try downloading the card instead.');
+      console.error('Error copying card:', err);
+      alert('Could not copy — try Download instead.');
     } finally {
       setIsExporting(false);
     }
@@ -106,347 +196,382 @@ export default function CardBuilderModal({ isOpen, onClose, verse }) {
     if (!cardRef.current) return;
     setIsExporting(true);
     try {
-      const { toPng } = await import('html-to-image');
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2.5, cacheBust: true });
+      const dataUrl = await exportCard();
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      
-      const file = new File([blob], `verseverse-${verse.reference.replace(/[\s:]+/g, '-')}.png`, { type: 'image/png' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      const file = new File(
+        [blob],
+        `verseverse-${verse.reference.replace(/[\s:]+/g, '-')}.png`,
+        { type: 'image/png' },
+      );
+      if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `${verse.reference} Card`,
-          text: `Check out this scripture card: "${verse.text}" - ${verse.reference}`
+          title: `${verse.reference} — Verse Verse`,
+          text: `"${verse.text}" — ${verse.reference}`,
         });
       } else {
-        // Fallback: Copy link and text
-        const text = `"${verse.text}" - ${verse.reference}\n\nShared from Verse Verse: ${window.location.origin}`;
-        await navigator.clipboard.writeText(text);
-        alert('Share info copied to clipboard! (Mobile devices & Safari support sharing image files directly)');
+        await navigator.clipboard.writeText(
+          `"${verse.text}" — ${verse.reference}\n\n${window.location.origin}`,
+        );
+        alert('Share text copied to clipboard.');
       }
     } catch (err) {
-      console.error('Error sharing card image:', err);
+      if (err?.name !== 'AbortError') console.error('Share error:', err);
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 px-4 md:px-6">
-      
-      {/* Click Outside Dismiss Backdrop */}
-      <div className="absolute inset-0 z-0" onClick={onClose} />
+    <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center md:p-6 lg:p-8 animate-in fade-in duration-300">
+      <div
+        className="absolute inset-0 bg-slate-900/55 backdrop-blur-2xl"
+        onClick={onClose}
+        aria-hidden
+      />
 
-      {/* Main Container Modal */}
-      <div className="relative z-10 w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto max-h-[85vh] md:max-h-[850px] animate-in zoom-in-95 duration-300">
-        
-        {/* Header (Top Close Button for Mobile) */}
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 z-50 text-white/50 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 w-9 h-9 flex items-center justify-center rounded-full transition-all active:bg-zinc-700 active:scale-95 border border-zinc-700/50 cursor-pointer"
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="card-studio-title"
+        className="relative z-10 w-full md:max-w-5xl card-studio-shell flex flex-col h-[100dvh] md:h-auto md:max-h-[min(880px,92vh)] rounded-t-[1.75rem] md:rounded-[2rem] border border-white/15 bg-gradient-to-br from-slate-600/90 via-slate-700/95 to-slate-800/95 overflow-hidden animate-in slide-in-from-bottom md:zoom-in-95 duration-300"
+      >
+        <div className="absolute -top-20 -right-16 w-64 h-64 bg-purple-400/25 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute -bottom-24 -left-16 w-72 h-72 bg-amber-400/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-teal-400/10 rounded-full blur-[80px] pointer-events-none" />
+
+        {/* Sticky header — Close always visible (mobile + desktop) */}
+        <header
+          className="relative z-[70] shrink-0 flex items-center justify-between gap-3 px-4 py-3 md:px-6 border-b border-white/15 bg-slate-800/90 backdrop-blur-xl"
+          style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
         >
-          <X size={20} />
-        </button>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-amber-400/25 to-purple-500/25 border border-white/20 shrink-0">
+              <Sparkles size={18} className="text-amber-200" />
+            </div>
+            <div className="min-w-0">
+              <h2 id="card-studio-title" className="text-white text-base md:text-lg font-black tracking-tight truncate">
+                Card Studio
+              </h2>
+              <p className="text-[10px] text-white/55 font-medium hidden sm:block">
+                Design shareable scripture cards
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border-2 border-white/25 bg-white text-slate-900 hover:bg-white/90 active:scale-95 transition-all cursor-pointer shadow-lg"
+            aria-label="Close Card Studio"
+          >
+            <X size={20} strokeWidth={2.5} />
+          </button>
+        </header>
 
-        {/* Left Side: Live Preview (9:16 Canvas Card View) */}
-        <div className="flex-1 bg-zinc-950 p-6 md:p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-zinc-800/50 overflow-y-auto">
-          <div className="relative shadow-2xl rounded-2xl overflow-hidden aspect-[9/16] w-[220px] md:w-[280px] select-none flex-shrink-0">
-            
-            {/* The Exportable Div Container */}
-            <div 
+        <div className="flex flex-1 flex-col md:flex-row min-h-0 overflow-hidden">
+        {/* Preview stage */}
+        <div className="relative shrink-0 md:flex-1 card-studio-stage px-4 py-5 md:p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/12">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/55 mb-3">
+            Live preview
+          </p>
+
+          <div className="relative rounded-[1.25rem] overflow-hidden aspect-[9/16] w-[min(42vw,180px)] sm:w-[200px] md:w-[280px] card-studio-device-glow select-none flex-shrink-0">
+            <div
               ref={cardRef}
-              className="w-full h-full p-6 md:p-8 flex flex-col justify-between items-center relative overflow-hidden"
-              style={{ 
-                background: bgMode === 'presets' 
-                  ? background.value 
-                  : `linear-gradient(${customAngle}deg, ${customColor1} 0%, ${customColor2} 100%)` 
-              }}
+              className="w-full h-full p-7 md:p-8 flex flex-col justify-between items-center relative overflow-hidden"
+              style={{ background: cardBackground }}
             >
-              {/* Blurred Ambient Blobs */}
-              <div className="absolute top-[-10%] left-[-20%] w-[80%] aspect-square bg-white/5 rounded-full blur-[40px] pointer-events-none" />
-              <div className="absolute bottom-[-10%] right-[-20%] w-[80%] aspect-square bg-teal-500/5 rounded-full blur-[45px] pointer-events-none" />
+              <div className="absolute top-[-15%] left-[-25%] w-[90%] aspect-square bg-white/12 rounded-full blur-[50px] pointer-events-none" />
+              <div className="absolute bottom-[-15%] right-[-25%] w-[85%] aspect-square bg-amber-200/10 rounded-full blur-[55px] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-black/20 pointer-events-none" />
 
-              {/* Texture overlays */}
               {selectedTexture === 'grain' && (
-                <svg className="absolute inset-0 w-full h-full opacity-[0.15] mix-blend-overlay pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="absolute inset-0 w-full h-full opacity-[0.1] mix-blend-overlay pointer-events-none" xmlns="http://www.w3.org/2000/svg">
                   <filter id="cardNoiseFilter">
                     <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
                   </filter>
                   <rect width="100%" height="100%" filter="url(#cardNoiseFilter)" />
                 </svg>
               )}
-
               {selectedTexture === 'mesh' && (
                 <>
-                  <div className="absolute top-[20%] left-[10%] w-[130px] h-[130px] rounded-full bg-teal-400/20 blur-[35px] pointer-events-none animate-pulse" />
-                  <div className="absolute bottom-[20%] right-[10%] w-[160px] h-[160px] rounded-full bg-fuchsia-500/20 blur-[45px] pointer-events-none animate-pulse animate-duration-[4000ms]" style={{ animationDelay: '2s' }} />
+                  <div className="absolute top-[18%] left-[8%] w-[140px] h-[140px] rounded-full bg-teal-300/25 blur-[40px] pointer-events-none" />
+                  <div className="absolute bottom-[18%] right-[8%] w-[170px] h-[170px] rounded-full bg-fuchsia-400/20 blur-[50px] pointer-events-none" />
                 </>
               )}
-
               {selectedTexture === 'stripes' && (
-                <div 
-                  className="absolute inset-0 opacity-[0.12] pointer-events-none" 
-                  style={{ 
-                    backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 12px)' 
-                  }} 
+                <div
+                  className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, rgba(255,255,255,0.15) 0px, rgba(255,255,255,0.15) 1px, transparent 1px, transparent 14px)',
+                  }}
                 />
               )}
 
-              {/* Watermark / Branding Logo at Top */}
-              <div className="w-full flex items-center justify-center opacity-40">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-white/70">
-                  † Verse Verse
+              <div className="w-full flex justify-center relative z-10">
+                <span className="text-[10px] uppercase font-bold tracking-[0.38em] text-white/75 drop-shadow-sm">
+                  † VERSE VERSE
                 </span>
               </div>
 
-              {/* Central Box for Text & Reference */}
-              <div className={`w-full flex-1 flex flex-col justify-center items-center p-4 rounded-xl transition-all duration-300 ${borderStyle.class}`}>
-                <p 
+              <div className={`w-full flex-1 flex flex-col justify-center items-center p-4 rounded-2xl relative z-10 ${borderStyle.class}`}>
+                <p
                   className={`text-white leading-relaxed mb-6 font-medium ${fontFamily.class}`}
-                  style={{ 
-                    fontSize: `${fontSize}px`, 
+                  style={{
+                    fontSize: `${fontSize}px`,
                     textAlign: alignment,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                    textShadow: '0 2px 20px rgba(0,0,0,0.45), 0 4px 32px rgba(0,0,0,0.25)',
                   }}
                 >
-                  "{verse.text}"
+                  &ldquo;{verse.text}&rdquo;
                 </p>
-                <div className="flex flex-col items-center gap-1.5">
-                  <h3 className="text-white font-bold text-sm md:text-base tracking-wide" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.6)' }}>
+                <div className="flex flex-col items-center gap-2">
+                  <h3
+                    className="text-white font-bold text-sm md:text-base tracking-wide"
+                    style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}
+                  >
                     {verse.reference}
                   </h3>
-                  <span className="bg-white/15 px-2 py-0.5 rounded-full text-[9px] text-white/80 font-semibold tracking-wider uppercase">
+                  <span className="bg-white/20 border border-white/25 px-3 py-1 rounded-full text-[9px] text-white font-bold tracking-wider uppercase backdrop-blur-sm">
                     {verse.translation || 'NIV'}
                   </span>
                 </div>
               </div>
 
-              {/* Watermark at Bottom */}
-              <div className="w-full text-center opacity-30">
-                <span className="text-[8px] tracking-wider text-white/60">
-                  verse-verse.app
-                </span>
+              <div className="w-full text-center relative z-10 opacity-40">
+                <span className="text-[8px] tracking-[0.22em] text-white/70 uppercase">verse-verse.app</span>
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* Right Side: Customization Options & Control Panel */}
-        <div className="w-full md:w-[380px] p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-zinc-900/90">
-          
-          <div>
-            <h2 className="text-white text-xl font-extrabold tracking-wide mb-1 flex items-center gap-2">
-              <Palette size={22} className="text-teal-400" />
-              Card Studio
-            </h2>
-            <p className="text-white/40 text-xs mb-6">Customize and render this verse to share as an image</p>
+        {/* Controls — scrollable on mobile */}
+        <div className="relative flex flex-1 flex-col min-h-0 w-full md:w-[420px] card-studio-panel">
+          <div className="flex-1 overflow-y-auto overscroll-contain no-scrollbar px-4 md:px-7 py-4 md:py-5 space-y-4">
+            <Section title="Quick moods">
+              <div className="grid grid-cols-2 gap-2 -mt-1">
+                {MOOD_PRESETS.map((mood) => (
+                  <button
+                    key={mood.id}
+                    type="button"
+                    onClick={() => applyMood(mood)}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer ${
+                      activeMood === mood.id
+                        ? 'card-studio-chip-active'
+                        : 'bg-white/10 border-white/15 hover:bg-white/14'
+                    }`}
+                  >
+                    <Wand2 size={14} className="text-amber-200/90 shrink-0" />
+                    <span className="text-xs font-bold text-white">{mood.name}</span>
+                  </button>
+                ))}
+              </div>
+            </Section>
 
-            {/* Background selection */}
-            <div className="mb-5">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Themes</label>
-                <div className="flex bg-zinc-800 p-0.5 rounded-lg border border-zinc-700/50">
-                  <button
-                    onClick={() => setBgMode('presets')}
-                    className={`px-2.5 py-1 rounded text-[9px] font-bold tracking-wider uppercase transition-all cursor-pointer ${bgMode === 'presets' ? 'bg-teal-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
-                  >
-                    Presets
-                  </button>
-                  <button
-                    onClick={() => setBgMode('custom')}
-                    className={`px-2.5 py-1 rounded text-[9px] font-bold tracking-wider uppercase transition-all cursor-pointer ${bgMode === 'custom' ? 'bg-teal-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}
-                  >
-                    Custom
-                  </button>
+            <Section title="Background">
+              <div className="flex justify-end -mt-7 mb-2">
+                <div className="flex bg-white/10 border border-white/15 p-0.5 rounded-full">
+                  {['presets', 'custom'].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setBgMode(mode)}
+                      className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                        bgMode === mode
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {bgMode === 'presets' ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {BACKGROUNDS.map((bg) => (
                     <button
                       key={bg.id}
-                      onClick={() => setBackground(bg)}
-                      className={`h-11 rounded-xl transition border text-white text-[10px] font-bold flex items-center justify-center relative overflow-hidden cursor-pointer ${background.id === bg.id ? 'border-teal-500 scale-105 shadow-lg shadow-teal-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}
+                      type="button"
+                      onClick={() => {
+                        setBackground(bg);
+                        setActiveMood('');
+                      }}
+                      className={`h-12 rounded-xl border-2 overflow-hidden relative cursor-pointer transition-all ${
+                        background.id === bg.id
+                          ? 'border-white scale-[1.04] shadow-lg shadow-white/20'
+                          : 'border-white/20 hover:border-white/40 hover:scale-[1.02]'
+                      }`}
                       style={{ background: bg.value }}
+                      title={bg.name}
                     >
-                      <span className="bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded text-white text-[8px] truncate max-w-[80px]">
-                        {bg.name}
-                      </span>
+                      <span className="sr-only">{bg.name}</span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="bg-zinc-950/60 border border-zinc-850 rounded-2xl p-3.5 space-y-3">
-                  <div className="flex justify-between gap-3">
-                    <div className="flex-1">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider block mb-1">Color 1</span>
-                      <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1.5">
-                        <input
-                          type="color"
-                          value={customColor1}
-                          onChange={(e) => setCustomColor1(e.target.value)}
-                          className="w-5 h-5 rounded border border-white/10 bg-transparent cursor-pointer"
-                        />
-                        <span className="text-[10px] font-mono text-gray-300 uppercase">{customColor1}</span>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Start', value: customColor1, set: setCustomColor1 },
+                      { label: 'End', value: customColor2, set: setCustomColor2 },
+                    ].map(({ label, value, set }) => (
+                      <div key={label}>
+                        <span className="text-[9px] text-white/55 uppercase font-bold tracking-wider">{label}</span>
+                        <div className="mt-1.5 flex items-center gap-2 bg-white/10 border border-white/15 rounded-xl px-2.5 py-2">
+                          <input
+                            type="color"
+                            value={value}
+                            onChange={(e) => set(e.target.value)}
+                            className="w-7 h-7 rounded-lg border-0 cursor-pointer"
+                          />
+                          <span className="text-[10px] font-mono text-white/70 uppercase truncate">{value}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider block mb-1">Color 2</span>
-                      <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1.5">
-                        <input
-                          type="color"
-                          value={customColor2}
-                          onChange={(e) => setCustomColor2(e.target.value)}
-                          className="w-5 h-5 rounded border border-white/10 bg-transparent cursor-pointer"
-                        />
-                        <span className="text-[10px] font-mono text-gray-300 uppercase">{customColor2}</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
                   <div>
-                    <div className="flex justify-between text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                    <div className="flex justify-between text-[9px] text-white/55 font-bold uppercase mb-1.5">
                       <span>Angle</span>
-                      <span>{customAngle}°</span>
+                      <span className="text-amber-200">{customAngle}°</span>
                     </div>
-                    <div className="flex items-center h-8 px-2 bg-zinc-900 border border-zinc-800 rounded-xl">
-                      <input
-                        type="range"
-                        min="0"
-                        max="360"
-                        value={customAngle}
-                        onChange={(e) => setCustomAngle(parseInt(e.target.value))}
-                        className="w-full accent-teal-400 bg-zinc-800 h-1 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      value={customAngle}
+                      onChange={(e) => setCustomAngle(parseInt(e.target.value, 10))}
+                      className="w-full accent-amber-400 h-1.5 rounded-full appearance-none cursor-pointer bg-white/15"
+                    />
                   </div>
                 </div>
               )}
-            </div>
+            </Section>
 
-            {/* Texture selection */}
-            <div className="mb-5">
-              <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest block mb-2">Overlay Texture</label>
-              <div className="grid grid-cols-2 gap-2">
-                {TEXTURES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTexture(t.id)}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border cursor-pointer transition ${selectedTexture === t.id ? 'bg-teal-500/10 border-teal-500 text-teal-400' : 'bg-zinc-800/40 border-zinc-800 text-white/70 hover:border-zinc-700'}`}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Typography selection */}
-            <div className="mb-5">
-              <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest block mb-2">Typography</label>
-              <div className="grid grid-cols-3 gap-2">
-                {FONTS.map((font) => (
-                  <button
-                    key={font.id}
-                    onClick={() => setFontFamily(font)}
-                    className={`py-2 px-1 rounded-xl text-xs font-bold text-center border cursor-pointer transition ${fontFamily.id === font.id ? 'bg-teal-500/10 border-teal-500 text-teal-400' : 'bg-zinc-800/40 border-zinc-800 text-white/70 hover:border-zinc-700'}`}
-                  >
-                    <span className={font.class}>{font.name.split(' ')[0]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Card Frame Options */}
-            <div className="mb-5">
-              <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest block mb-2">Border Style</label>
-              <div className="grid grid-cols-2 gap-2">
-                {BORDERS.map((border) => (
-                  <button
-                    key={border.id}
-                    onClick={() => setBorderStyle(border)}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border cursor-pointer transition ${borderStyle.id === border.id ? 'bg-teal-500/10 border-teal-500 text-teal-400' : 'bg-zinc-800/40 border-zinc-800 text-white/70 hover:border-zinc-700'}`}
-                  >
-                    {border.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Text Alignment & Size Controls */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              
-              <div>
-                <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest block mb-2">Align Text</label>
-                <div className="flex gap-1.5 bg-zinc-800/40 border border-zinc-800 p-1.5 rounded-xl">
-                  {['left', 'center', 'right'].map((align) => (
-                    <button
-                      key={align}
-                      onClick={() => setAlignment(align)}
-                      className={`flex-1 flex justify-center py-1 rounded-lg transition cursor-pointer ${alignment === align ? 'bg-teal-500 text-black shadow-md' : 'text-white/50 hover:text-white'}`}
+            <div className="grid grid-cols-2 gap-3">
+              <Section title="Texture">
+                <div className="grid grid-cols-2 gap-1.5 -mt-1">
+                  {TEXTURES.map((t) => (
+                    <ChipButton
+                      key={t.id}
+                      active={selectedTexture === t.id}
+                      onClick={() => setSelectedTexture(t.id)}
+                      className="py-2 text-[11px] w-full"
                     >
-                      {align === 'left' && <AlignLeft size={16} />}
-                      {align === 'center' && <AlignCenter size={16} />}
-                      {align === 'right' && <AlignRight size={16} />}
-                    </button>
+                      {t.name}
+                    </ChipButton>
                   ))}
                 </div>
-              </div>
+              </Section>
+              <Section title="Frame">
+                <div className="grid grid-cols-2 gap-1.5 -mt-1">
+                  {BORDERS.map((border) => (
+                    <ChipButton
+                      key={border.id}
+                      active={borderStyle.id === border.id}
+                      onClick={() => setBorderStyle(border)}
+                      className="py-2 text-[11px] w-full"
+                    >
+                      {border.name}
+                    </ChipButton>
+                  ))}
+                </div>
+              </Section>
+            </div>
 
-              <div>
-                <label className="text-white/60 text-[10px] font-bold uppercase tracking-widest block mb-2">Text Size ({fontSize}px)</label>
-                <div className="flex items-center h-[46px] px-2 bg-zinc-800/40 border border-zinc-800 rounded-xl">
-                  <input
-                    type="range"
-                    min="18"
-                    max="40"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(parseInt(e.target.value))}
-                    className="w-full accent-teal-400 bg-zinc-700 h-1.5 rounded-lg appearance-none cursor-pointer"
-                  />
+            <Section title="Typography">
+              <div className="flex flex-wrap gap-2 -mt-1 mb-3">
+                {FONTS.map((font) => (
+                  <ChipButton
+                    key={font.id}
+                    active={fontFamily.id === font.id}
+                    onClick={() => setFontFamily(font)}
+                    className={`py-2 px-4 ${font.class}`}
+                  >
+                    {font.name}
+                  </ChipButton>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[9px] text-white/55 uppercase font-bold tracking-wider block mb-1.5">Align</span>
+                  <div className="flex gap-1 bg-white/10 border border-white/15 p-1 rounded-xl">
+                    {['left', 'center', 'right'].map((align) => (
+                      <button
+                        key={align}
+                        type="button"
+                        onClick={() => setAlignment(align)}
+                        className={`flex-1 flex justify-center py-2 rounded-lg transition cursor-pointer ${
+                          alignment === align
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-white/50 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {align === 'left' && <AlignLeft size={15} />}
+                        {align === 'center' && <AlignCenter size={15} />}
+                        {align === 'right' && <AlignRight size={15} />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[9px] text-white/55 uppercase font-bold tracking-wider block mb-1.5">
+                    Size <span className="text-amber-200">{fontSize}px</span>
+                  </span>
+                  <div className="flex items-center h-[42px] px-3 bg-white/10 border border-white/15 rounded-xl">
+                    <input
+                      type="range"
+                      min="18"
+                      max="40"
+                      value={fontSize}
+                      onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
+                      className="w-full accent-amber-400 h-1.5 rounded-full appearance-none cursor-pointer bg-white/15"
+                    />
+                  </div>
                 </div>
               </div>
-
-            </div>
-
+            </Section>
           </div>
 
-          {/* Action Export Buttons */}
-          <div className="flex flex-col gap-2 mt-4 md:mt-0">
+          <div
+            className="shrink-0 px-4 md:px-7 py-4 border-t border-white/12 bg-slate-800/80 backdrop-blur-xl space-y-2.5"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
             <button
+              type="button"
               onClick={handleDownload}
               disabled={isExporting}
-              className="w-full bg-teal-500 hover:bg-teal-600 active:scale-[0.98] text-black font-bold py-3 px-4 rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-teal-500/10 disabled:opacity-50 disabled:pointer-events-none"
+              className="w-full rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-orange-600 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-xl shadow-orange-500/30 hover:shadow-orange-500/45 hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:pointer-events-none border border-white/20"
             >
-              <Download size={18} />
-              {isExporting ? 'Generating Image...' : 'Download PNG'}
+              <Download size={17} />
+              {isExporting ? 'Rendering…' : 'Download PNG'}
             </button>
-
             <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={handleCopy}
                 disabled={isExporting}
-                className="bg-zinc-800 hover:bg-zinc-750 active:scale-[0.98] text-white text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer border border-zinc-750/50 disabled:opacity-50 disabled:pointer-events-none"
+                className="rounded-xl border border-white/18 bg-white/12 hover:bg-white/18 py-2.5 text-[10px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 cursor-pointer transition disabled:opacity-50"
               >
                 <Copy size={14} />
-                Copy Image
+                Copy
               </button>
-
               <button
+                type="button"
                 onClick={handleShare}
                 disabled={isExporting}
-                className="bg-zinc-850 hover:bg-zinc-800 active:scale-[0.98] text-teal-400 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer border border-teal-500/10 disabled:opacity-50 disabled:pointer-events-none"
+                className="rounded-xl border border-purple-300/30 bg-purple-400/15 hover:bg-purple-400/25 py-2.5 text-[10px] font-bold uppercase tracking-wider text-purple-100 flex items-center justify-center gap-1.5 cursor-pointer transition disabled:opacity-50"
               >
                 <Share2 size={14} />
-                Share Card
+                Share
               </button>
             </div>
           </div>
-
         </div>
-
+        </div>
       </div>
     </div>
   );

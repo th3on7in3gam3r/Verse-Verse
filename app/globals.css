@@ -192,3 +192,42 @@
     35%  { transform: scale(1.35); filter: brightness(1.4); }
     100% { transform: scale(1); filter: brightness(1); }
 }
+
+.votd-exit {
+    animation: votdExit 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+@keyframes votdExit {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-14px) scale(0.96); }
+}
+
+/* ── Card Studio modal ───────────────────────────────────────────────────── */
+.card-studio-shell {
+    box-shadow:
+        0 32px 100px rgba(15, 23, 42, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+        0 0 120px rgba(168, 85, 247, 0.12);
+}
+.card-studio-stage {
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 20%, rgba(196, 181, 253, 0.22), transparent),
+        radial-gradient(ellipse 60% 50% at 90% 90%, rgba(251, 191, 36, 0.14), transparent),
+        linear-gradient(165deg, #64748b 0%, #475569 42%, #52525b 100%);
+}
+.card-studio-panel {
+    background: linear-gradient(180deg, rgba(71, 85, 105, 0.55) 0%, rgba(51, 65, 85, 0.75) 100%);
+}
+.card-studio-chip-active {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(251, 191, 36, 0.14));
+    border-color: rgba(255, 255, 255, 0.38);
+    color: #fff;
+    box-shadow: 0 4px 24px rgba(251, 146, 60, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+.card-studio-device-glow {
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.2),
+        0 0 48px rgba(168, 85, 247, 0.25),
+        0 0 80px rgba(251, 146, 60, 0.12);
+}
