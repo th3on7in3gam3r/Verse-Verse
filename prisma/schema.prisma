@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  name         String
+  createdAt    DateTime      @default(now())
+  prayers      Prayer[]
+  savedPrayers SavedPrayer[]
+}
+
+model Prayer {
+  id           String   @id @default(cuid())
+  verseId      String
+  text         String
+  author       String
+  userId       String?
+  supportCount Int      @default(0)
+  user         User?    @relation(fields: [userId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model SavedPrayer {
+  id        String   @id @default(cuid())
+  feeling   String
+  prayer    String
+  verses    String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  isAnswered Boolean  @default(false)
+  answerUpdate String?
+}

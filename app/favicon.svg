@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#0f0f1a"/>
+  <!-- Outer glow ring -->
+  <circle cx="16" cy="16" r="13" stroke="#7c3aed" stroke-width="1.5" stroke-opacity="0.6"/>
+  <!-- Stylised open book / two V shapes representing "Verse Verse" -->
+  <!-- Left V -->
+  <path d="M7 10 L11.5 20 L16 10" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Right V -->
+  <path d="M16 10 L20.5 20 L25 10" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Centre dot -->
+  <circle cx="16" cy="10" r="1.5" fill="#c4b5fd"/>
+</svg>
