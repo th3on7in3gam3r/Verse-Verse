@@ -89,26 +89,29 @@ export default function AICompanionDrawer({ isOpen, onClose }) {
   const handleSaveToJournal = async (targetData = generatedData) => {
     if (!targetData) return;
 
+    // Capture feeling at call time so the lazy-auth callback
+    // always uses the value the user typed, not a stale closure.
+    const feelingSnapshot = feeling;
+
     if (!user) {
-      // Lazy Auth Flow
       setPendingSave(targetData);
-      openAuthModal(async (loggedInUser) => {
-        await executeSave(targetData);
+      openAuthModal(async () => {
+        await executeSave(targetData, feelingSnapshot);
         setPendingSave(null);
       });
       return;
     }
 
-    await executeSave(targetData);
+    await executeSave(targetData, feelingSnapshot);
   };
 
-  const executeSave = async (targetData) => {
+  const executeSave = async (targetData, feelingValue = feeling) => {
     try {
       const res = await fetch('/api/journal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          feeling,
+          feeling: feelingValue,
           prayer: targetData.prayer,
           verses: targetData.verses.map(v => `${v.reference}|${v.text}`).join(';')
         })
@@ -116,7 +119,6 @@ export default function AICompanionDrawer({ isOpen, onClose }) {
       const data = await res.json();
       if (data.success) {
         setSaveSuccess(true);
-        // Refresh journal list in background
         fetchJournal();
       }
     } catch (err) {

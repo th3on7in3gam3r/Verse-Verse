@@ -1,0 +1,282 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { Heart, MessageCircle, Share2, Wind } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import MeditationOverlay from './MeditationOverlay';
+import CardBuilderModal from './CardBuilderModal';
+import AudioNarrator from './AudioNarrator';
+
+type TranslationKey = 'NIV' | 'ESV' | 'KJV';
+
+type VerseCardProps = {
+  verse: {
+    id: string;
+    text: string;
+    reference: string;
+    translation?: string;
+    theme?: string;
+    background?: string;
+    media?: { image?: string; video?: string };
+  };
+  isVisible?: boolean;
+  onOpenComments: (verseId: string) => void;
+  onSeen?: (verseId: string) => void;
+};
+
+const TRANSLATION_OPTIONS: TranslationKey[] = ['NIV', 'ESV', 'KJV'];
+
+const BACKGROUNDS: Record<string, string> = {
+  blue:   'linear-gradient(135deg, #667eea, #764ba2, #6B8DD6, #8E37D7)',
+  purple: 'linear-gradient(135deg, #f093fb, #f5576c, #f093fb, #f5576c)',
+  green:  'linear-gradient(135deg, #4facfe, #00f2fe, #4facfe, #00f2fe)',
+  orange: 'linear-gradient(135deg, #fa709a, #fee140, #fa709a, #fee140)',
+};
+
+function normalizeTranslation(value?: string): TranslationKey {
+  if (!value) return 'NIV';
+  const up = value.toUpperCase();
+  return TRANSLATION_OPTIONS.includes(up as TranslationKey) ? (up as TranslationKey) : 'NIV';
+}
+
+export default function VerseCard({ verse, isVisible = false, onOpenComments, onSeen }: VerseCardProps) {
+  const { prefersVideo } = useAuth();
+
+  const [isLiked,            setIsLiked]            = useState(false);
+  const [showLikeAnimation,  setShowLikeAnimation]  = useState(false);
+  const [isMeditating,       setIsMeditating]       = useState(false);
+  const [isShareBuilderOpen, setIsShareBuilderOpen] = useState(false);
+  const [amenCount,          setAmenCount]          = useState(0);
+  const [showAmenBurst,      setShowAmenBurst]      = useState(false);
+  const [verseText,          setVerseText]          = useState(verse.text);
+  const [translation,        setTranslation]        = useState<TranslationKey>(normalizeTranslation(verse.translation));
+  const [translationLoading, setTranslationLoading] = useState(false);
+
+  const lastAmenAtRef  = useRef<number>(0);
+  const lastTapRef     = useRef<number>(0);
+  const seenReportedRef = useRef(false);
+
+  // ── Sync when verse prop changes ──────────────────────────────────────────
+  useEffect(() => {
+    setVerseText(verse.text);
+    setTranslation(normalizeTranslation(verse.translation));
+    seenReportedRef.current = false; // reset so new verse gets reported
+  }, [verse.id, verse.text, verse.translation]);
+
+  // ── Liked state ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('savedVerses') || '[]');
+    setIsLiked(saved.includes(verse.id));
+  }, [verse.id]);
+
+  // ── Report seen ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (seenReportedRef.current) return;
+    onSeen?.(verse.id);
+    seenReportedRef.current = true;
+  }, [onSeen, verse.id]);
+
+  // ── Amen count fetch ──────────────────────────────────────────────────────
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/verse-amen/${verse.id}`)
+      .then(r => r.json())
+      .then(d => { if (active && typeof d?.amenCount === 'number') setAmenCount(d.amenCount); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [verse.id]);
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  const toggleLike = () => {
+    const saved: string[] = JSON.parse(localStorage.getItem('savedVerses') || '[]');
+    let next: string[];
+    if (isLiked) {
+      next = saved.filter(id => id !== verse.id);
+      setIsLiked(false);
+    } else {
+      next = [...saved, verse.id];
+      setIsLiked(true);
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 1000);
+    }
+    localStorage.setItem('savedVerses', JSON.stringify(next));
+  };
+
+  const handleShare = async () => {
+    const text = `"${verseText}" - ${verse.reference}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${verse.reference} - Verse Verse`, text, url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(`${text}\n\n${window.location.href}`);
+      }
+    } catch { /* cancelled */ }
+  };
+
+  const triggerAmen = async () => {
+    const now = Date.now();
+    if (now - lastAmenAtRef.current < 5000) return;
+    lastAmenAtRef.current = now;
+    setShowAmenBurst(true);
+    setTimeout(() => setShowAmenBurst(false), 900);
+    try {
+      const res  = await fetch(`/api/verse-amen/${verse.id}`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && typeof data?.amenCount === 'number') setAmenCount(data.amenCount);
+    } catch { /* ignore */ }
+  };
+
+  const handleTouchEnd = () => {
+    const now = Date.now();
+    if (lastTapRef.current && now - lastTapRef.current <= 300) {
+      triggerAmen();
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+  };
+
+  const changeTranslation = async (key: TranslationKey) => {
+    if (key === translation || translationLoading) return;
+    setTranslationLoading(true);
+    try {
+      const res  = await fetch(`/api/bible/passage?ref=${encodeURIComponent(verse.reference)}&translation=${key}`);
+      const data = await res.json();
+      if (res.ok && data?.verse?.text) {
+        setTranslation(key);
+        setVerseText(data.verse.text);
+        localStorage.setItem('verseverse_translation_preference', key);
+      }
+    } catch { /* ignore */ }
+    finally { setTranslationLoading(false); }
+  };
+
+  return (
+    <div
+      className="relative w-full h-full flex flex-col justify-center items-center overflow-hidden animate-gradient"
+      style={{
+        backgroundImage: BACKGROUNDS[verse.background || 'blue'] || BACKGROUNDS.blue,
+        backgroundSize: '400% 400%',
+      }}
+      onDoubleClick={triggerAmen}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* ── Background media ─────────────────────────────────────────────── */}
+      {verse.media?.video && prefersVideo && (
+        <video src={verse.media.video} autoPlay loop muted playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0 opacity-90" />
+      )}
+      {verse.media?.image && !prefersVideo && (
+        <img src={verse.media.image} alt={verse.theme ?? verse.reference}
+          className="absolute inset-0 w-full h-full object-cover z-0 opacity-85 animate-slow-pan" />
+      )}
+
+      {/* Gradient overlays — top scrim for header clearance, bottom for controls */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 z-0 pointer-events-none" />
+
+      {/* ── Amen burst ───────────────────────────────────────────────────── */}
+      {showAmenBurst && (
+        <div className="absolute left-1/2 top-1/3 -translate-x-1/2 z-30 text-5xl amen-burst pointer-events-none select-none">
+          🙏
+        </div>
+      )}
+      {showLikeAnimation && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <Heart size={100} className="text-red-500 fill-red-500 animate-ping opacity-75" />
+        </div>
+      )}
+
+
+      {/* ── Main verse content ───────────────────────────────────────────── */}
+      {/* Always visible — opacity animation only plays when card becomes active */}
+      <div className="flex-1 w-full max-w-lg flex flex-col justify-center items-center px-8 pt-16 pb-8 relative z-10">
+        <p
+          className="text-white text-3xl md:text-[2.6rem] font-serif text-center mb-6 leading-snug drop-shadow-2xl"
+          style={{
+            textShadow: '0 4px 16px rgba(0,0,0,0.9)',
+            opacity: isVisible ? 1 : 0.85,
+            transform: isVisible ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 0.7s ease, transform 0.7s ease',
+          }}
+        >
+          "{verseText}"
+        </p>
+        <div className="flex flex-col items-center gap-2"
+          style={{
+            opacity: isVisible ? 1 : 0.75,
+            transition: 'opacity 0.7s ease 0.15s',
+          }}>
+          <h2 className="text-white text-xl font-bold tracking-wide drop-shadow-md"
+            style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8)' }}>
+            {verse.reference}
+          </h2>
+          <span className="bg-white/25 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] text-white uppercase font-bold tracking-widest">
+            {translation}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Right sidebar actions ────────────────────────────────────────── */}
+      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-5 z-20">
+        {[
+          { icon: <Heart size={26} className={isLiked ? 'text-red-500 fill-red-500' : 'text-white'} />, label: isLiked ? 'Saved' : 'Save', action: toggleLike },
+          { icon: <MessageCircle size={26} className="text-white" />, label: 'Prayers', action: () => onOpenComments(verse.id) },
+          { icon: <Share2 size={26} className="text-white" />, label: 'Share', action: handleShare },
+          { icon: <Wind size={26} className="text-white" />, label: 'Meditate', action: () => setIsMeditating(true) },
+        ].map(({ icon, label, action }) => (
+          <button key={label} type="button" onClick={action}
+            className="flex flex-col items-center gap-1 group btn-interactive cursor-pointer">
+            <div className="bg-black/40 border border-white/10 p-3 rounded-full backdrop-blur-md group-hover:bg-black/60 transition">
+              {icon}
+            </div>
+            <span className="text-white text-[11px] font-semibold drop-shadow-md">{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Bottom Left Controls Stack ───────────────────────────────────── */}
+      <div className="absolute left-4 bottom-20 z-30 flex flex-col justify-end items-start gap-2.5 pointer-events-none w-64">
+        
+        <div className="flex gap-2 items-center">
+          {/* Amen count */}
+          <div className="pointer-events-auto">
+            <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1.5">
+              🙏 <span className="text-white">{amenCount}</span> {amenCount === 1 ? 'Amen' : 'Amens'}
+            </span>
+          </div>
+
+          {/* Translation switcher */}
+          <div className="pointer-events-auto flex items-center gap-1 bg-black/40 border border-white/10 px-1.5 py-1 rounded-full backdrop-blur-md shadow-lg">
+            {TRANSLATION_OPTIONS.map(key => (
+              <button key={key} type="button" onClick={() => changeTranslation(key)}
+                className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                  translation === key ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'
+                }`}>
+                {key}
+              </button>
+            ))}
+            {translationLoading && <span className="text-white/50 text-[9px] ml-1 pr-2">…</span>}
+          </div>
+        </div>
+
+        {/* Audio narrator */}
+        <div className="pointer-events-auto relative w-full">
+          <AudioNarrator verse={verse} isVisible={isVisible} />
+        </div>
+      </div>
+
+      {/* ── Branding watermark ───────────────────────────────────────────── */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <span className="text-white/30 text-[9px] font-bold tracking-[0.35em] uppercase">
+          † VERSE VERSE
+        </span>
+      </div>
+
+      {/* ── Overlays ─────────────────────────────────────────────────────── */}
+      {isMeditating && <MeditationOverlay verse={verse} onClose={() => setIsMeditating(false)} />}
+      {isShareBuilderOpen && (
+        <CardBuilderModal isOpen={isShareBuilderOpen} onClose={() => setIsShareBuilderOpen(false)} verse={verse} />
+      )}
+    </div>
+  );
+}

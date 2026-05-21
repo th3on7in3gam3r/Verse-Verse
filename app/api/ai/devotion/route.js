@@ -31,7 +31,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'reference and text are required.' }, { status: 400 });
   }
 
-  const API_KEY = process.env.GEMINI_API_KEY;
+  const API_KEY = process.env.GEMINI_API_KEY || process.env.GEMINI;
 
   // ── Offline / unconfigured fallback ─────────────────────────────────────────
   if (!API_KEY) {

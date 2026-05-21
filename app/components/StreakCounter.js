@@ -25,7 +25,7 @@ export default function StreakCounter({ onOpenDashboard }) {
   }, []);
 
   return (
-    <div className="absolute top-4 right-4 z-40 flex items-center gap-2 pointer-events-auto">
+    <div className="flex items-center gap-2 pointer-events-auto">
       {/* Streak pill (always show) */}
       {user ? (
         <div className="bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 border border-orange-500/30 flex items-center gap-1.5 shadow-lg shadow-orange-500/20">

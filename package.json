@@ -28,9 +28,13 @@
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@types/node": "^20.14.8",
+    "@types/react": "^19.0.70",
+    "@types/react-dom": "^19.0.15",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.15",
     "prisma": "^7.8.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "typescript": "6.0.3"
   }
 }

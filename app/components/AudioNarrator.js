@@ -234,7 +234,7 @@ export default function AudioNarrator({ verse, isVisible }) {
   return (
     <>
       <div
-        className="absolute left-4 bottom-20 z-30 flex flex-col gap-1.5"
+        className="relative flex flex-col gap-1.5"
         style={{ filter: 'drop-shadow(0 8px 40px rgba(139,92,246,0.35))' }}
       >
 

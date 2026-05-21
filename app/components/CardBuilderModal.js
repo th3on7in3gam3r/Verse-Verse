@@ -133,18 +133,18 @@ export default function CardBuilderModal({ isOpen, onClose, verse }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 px-4 md:px-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 px-4 md:px-6">
       
       {/* Click Outside Dismiss Backdrop */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
 
       {/* Main Container Modal */}
-      <div className="relative z-10 w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[850px] animate-in zoom-in-95 duration-300">
+      <div className="relative z-10 w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto max-h-[85vh] md:max-h-[850px] animate-in zoom-in-95 duration-300">
         
         {/* Header (Top Close Button for Mobile) */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 text-white/50 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 p-2 rounded-full transition-all border border-zinc-700/50 cursor-pointer"
+          className="absolute top-4 right-4 z-50 text-white/50 hover:text-white bg-zinc-800/80 hover:bg-zinc-800 w-9 h-9 flex items-center justify-center rounded-full transition-all active:bg-zinc-700 active:scale-95 border border-zinc-700/50 cursor-pointer"
         >
           <X size={20} />
         </button>

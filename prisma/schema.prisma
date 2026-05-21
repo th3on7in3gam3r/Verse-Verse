@@ -41,3 +41,9 @@ model SavedPrayer {
   isAnswered Boolean  @default(false)
   answerUpdate String?
 }
+
+model VerseStat {
+  verseId   String   @id
+  amenCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+}

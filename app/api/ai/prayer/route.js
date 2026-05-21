@@ -68,14 +68,16 @@ const DEFAULT_FALLBACK = {
 };
 
 export async function POST(request) {
+  let feeling = '';
   try {
-    const { feeling } = await request.json();
+    const body = await request.json();
+    feeling = body.feeling || '';
 
     if (!feeling || feeling.trim().length === 0) {
       return NextResponse.json({ error: 'Please describe how you are feeling.' }, { status: 400 });
     }
 
-    const API_KEY = process.env.GEMINI_API_KEY;
+    const API_KEY = process.env.GEMINI_API_KEY || process.env.GEMINI;
 
     if (!API_KEY) {
       // Run the local keyword matcher for offline / unconfigured fallback
@@ -137,11 +139,13 @@ Do not output any markdown formatting like \`\`\`json or \`\`\`. Start and end w
   } catch (error) {
     console.error('AI Prayer Generation Error:', error);
     // Graceful fallback to offline model in case of runtime errors
-    const feelingLower = (request.json()?.feeling || '').toLowerCase();
-    const matched = OFFLINE_FALLBACKS.find(item => 
+    const feelingLower = (feeling || '').toLowerCase();
+    const matched = OFFLINE_FALLBACKS.find(item =>
       item.keywords.some(keyword => feelingLower.includes(keyword))
     );
-    const result = matched ? { prayer: matched.prayer, verses: matched.verses } : { prayer: DEFAULT_FALLBACK.prayer, verses: DEFAULT_FALLBACK.verses };
+    const result = matched
+      ? { prayer: matched.prayer, verses: matched.verses }
+      : { prayer: DEFAULT_FALLBACK.prayer, verses: DEFAULT_FALLBACK.verses };
     return NextResponse.json(result);
   }
 }

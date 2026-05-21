@@ -38,7 +38,7 @@
     scroll-snap-stop: always;
     flex-shrink: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100%;
 }
 
 /* User's Animation Layers */
@@ -122,37 +122,41 @@
     }
 }
 
+.hero-glass-effect {
+    position: relative;
+    overflow: hidden;
+}
+.hero-glass-effect::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 26%),
+                radial-gradient(circle at bottom right, rgba(56,189,248,0.14), transparent 20%);
+    pointer-events: none;
+    animation: glassPulse 7s ease-in-out infinite;
+}
+
+@keyframes glassPulse {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    50% { opacity: 0.98; transform: scale(1.02); }
+}
+
 /* ── Prayer Wave Overlay ─────────────────────────────────────────────────── */
-@keyframes prayerParticleRise {
-    0%   { transform: translateY(0) translateX(0); opacity: 0; }
-    8%   { opacity: 1; }
-    92%  { opacity: 0.6; }
-    100% { transform: translateY(-105vh) translateX(var(--drift, 0px)); opacity: 0; }
-}
-@keyframes prayerPulse {
-    0%, 100% { transform: scale(1);    opacity: 0.6; }
-    50%       { transform: scale(1.35); opacity: 0.2; }
-}
-@keyframes shimmerSweep {
-    0%   { transform: translateX(-100%); }
-    60%  { transform: translateX(100%); }
-    100% { transform: translateX(100%); }
-}
+/* prayerParticleRise, prayerPulse, shimmerSweep are defined inline in       */
+/* PrayerWaveOverlay.js to keep them scoped. Only global animations here.    */
 
-/* ── Option 2: Prayer Wave Animations ───────────────────────────────────── */
+/* ── Sonar rings (PrayerWaveNotifier) ───────────────────────────────────── */
 @keyframes ripple-expand {
-    0% { transform: scale(0.5); opacity: 1; border-width: 4px; }
-    100% { transform: scale(4); opacity: 0; border-width: 1px; }
+    0%   { transform: scale(0.5); opacity: 1; border-width: 4px; }
+    100% { transform: scale(4);   opacity: 0; border-width: 1px; }
 }
 
-@keyframes particle-burst {
-    0% { transform: translate(0, 0) scale(1); opacity: 1; }
-    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+/* ── Amen burst (VerseCard double-tap) ──────────────────────────────────── */
+.amen-burst {
+    animation: amenBurst 0.9s ease-out forwards;
 }
-
-@keyframes float-across {
-    0% { transform: translateX(100vw) translateY(var(--start-y, 20vh)) scale(0.8); opacity: 0; }
-    10% { opacity: 1; transform: translateX(80vw) translateY(calc(var(--start-y, 20vh) - 5vh)) scale(1); }
-    90% { opacity: 1; transform: translateX(-80vw) translateY(calc(var(--start-y, 20vh) - 15vh)) scale(1.1); }
-    100% { transform: translateX(-100vw) translateY(calc(var(--start-y, 20vh) - 20vh)) scale(0.8); opacity: 0; }
+@keyframes amenBurst {
+    0%   { transform: translateY(0)      scale(1);    opacity: 1; }
+    40%  { transform: translateY(-3rem)  scale(1.25); opacity: 1; }
+    100% { transform: translateY(-7rem)  scale(0.8);  opacity: 0; }
 }

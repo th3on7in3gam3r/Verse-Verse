@@ -163,7 +163,7 @@ export default function BackgroundMusic() {
   const activeCount = TRACKS.filter(t => trackStates[t.id]?.active).length;
 
   return (
-    <div className="absolute top-4 left-36 z-40 flex flex-col items-start gap-2 pointer-events-auto">
+    <div className="flex flex-col items-start gap-2 pointer-events-auto relative z-50">
 
       {/* Master pill */}
       <div className={`flex items-center gap-1.5 border p-1 rounded-full backdrop-blur-md shadow-lg transition-all duration-300 ${
@@ -198,9 +198,9 @@ export default function BackgroundMusic() {
         </button>
       </div>
 
-      {/* Mixer panel */}
+      {/* Mixer panel — absolutely positioned so it floats below the pill */}
       {panelOpen && (
-        <div className="w-72 bg-zinc-950/97 border border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl animate-in fade-in slide-in-from-top-3 duration-200 overflow-hidden">
+        <div className="absolute top-full left-0 mt-2 w-72 bg-zinc-950/97 border border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl animate-in fade-in slide-in-from-top-3 duration-200 overflow-hidden z-50">
 
           {/* Header */}
           <div className="flex justify-between items-center px-4 pt-4 pb-3 border-b border-white/[0.06]">
