@@ -26,25 +26,23 @@ export default function StreakCounter({ onOpenDashboard }) {
 
   return (
     <div className="absolute top-4 right-4 z-40 flex items-center gap-2 pointer-events-auto">
-      {/* Streak pill (if greater than 0) */}
-      {streak > 0 && (
-        user ? (
-          <div className="bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 border border-orange-500/30 flex items-center gap-1.5 shadow-lg shadow-orange-500/20">
-            <Flame size={18} className="text-orange-500 fill-orange-500" />
-            <span className="text-white font-bold text-sm">{streak}</span>
-          </div>
-        ) : (
-          <button 
-            onClick={() => openAuthModal()}
-            className="group/streak bg-black/40 hover:bg-orange-500/10 border border-orange-500/30 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg shadow-orange-500/5 hover:shadow-orange-500/10 transition-all cursor-pointer"
-          >
-            <Flame size={18} className="text-orange-500 fill-orange-500 group-hover/streak:animate-bounce" />
-            <span className="text-white font-bold text-sm">{streak}</span>
-            <span className="max-w-0 overflow-hidden group-hover/streak:max-w-[120px] transition-all duration-500 text-[10px] text-orange-300 font-medium whitespace-nowrap">
-              Sync to cloud
-            </span>
-          </button>
-        )
+      {/* Streak pill (always show) */}
+      {user ? (
+        <div className="bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 border border-orange-500/30 flex items-center gap-1.5 shadow-lg shadow-orange-500/20">
+          <Flame size={18} className="text-orange-500 fill-orange-500" />
+          <span className="text-white font-bold text-sm">{streak}</span>
+        </div>
+      ) : (
+        <button
+          onClick={() => openAuthModal()}
+          className="group/streak bg-black/40 hover:bg-orange-500/10 border border-orange-500/30 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg shadow-orange-500/5 hover:shadow-orange-500/10 transition-all cursor-pointer"
+        >
+          <Flame size={18} className="text-orange-500 fill-orange-500 group-hover/streak:animate-bounce" />
+          <span className="text-white font-bold text-sm">{streak}</span>
+          <span className="max-w-0 overflow-hidden group-hover/streak:max-w-[120px] transition-all duration-500 text-[10px] text-orange-300 font-medium whitespace-nowrap">
+            Sync to cloud
+          </span>
+        </button>
       )}
 
       {/* Auth state button / profile menu */}
