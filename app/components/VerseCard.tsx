@@ -317,10 +317,18 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
       </div>
 
       {/* ── Branding watermark ───────────────────────────────────────────── */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <span className="text-white/30 text-[9px] font-bold tracking-[0.35em] uppercase">
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1">
+        <span className="text-white/30 text-[9px] font-bold tracking-[0.35em] uppercase pointer-events-none">
           † VERSE VERSE
         </span>
+        <a
+          href="https://www.biblefunlandstudios.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[8px] font-semibold tracking-wider text-white/25 hover:text-amber-300/70 transition-colors pointer-events-auto"
+        >
+          ✦ BibleFunLand Studios
+        </a>
       </div>
 
       {/* ── Overlays ─────────────────────────────────────────────────────── */}

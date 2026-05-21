@@ -17,6 +17,7 @@ import { Sparkles, Search } from 'lucide-react';
 import UserDashboardModal from './components/UserDashboardModal';
 import CardBuilderModal from './components/CardBuilderModal';
 import OnboardingTutorial from './components/OnboardingTutorial';
+import BibleFunLandStudiosBanner from './components/BibleFunLandStudiosBanner';
 import type { BibleVerse } from '../lib/bible';
 
 interface VerseData {
@@ -199,8 +200,13 @@ function MainApp() {
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden select-none">
 
+      {/* ── BibleFunLand Studios — ecosystem link ───────────────────────────── */}
+      <div className="absolute inset-x-0 top-0 z-[42] pointer-events-auto">
+        <BibleFunLandStudiosBanner />
+      </div>
+
       {/* ── Header overlay — floats above the feed, takes no space ─────────── */}
-      <div className="absolute inset-x-0 top-0 z-40 pointer-events-none">
+      <div className="absolute inset-x-0 top-0 z-40 pointer-events-none" style={{ paddingTop: '2.25rem' }}>
         
         {/* Invisible hit area for hover/tap to reveal header */}
         <div 
@@ -272,7 +278,7 @@ function MainApp() {
       {/* Verse of the Day — daily streak (For You, first card) */}
       {!isSearching && activeCategoryIndex === 0 && currentVerseIndex === 0 && (
         <div
-          className={`absolute inset-x-0 top-14 md:top-16 z-50 transition-all duration-500 ease-out ${
+          className={`absolute inset-x-0 top-24 md:top-28 z-50 transition-all duration-500 ease-out ${
             shouldHideHeader ? 'opacity-90 translate-y-0' : 'opacity-100'
           }`}
         >
@@ -282,7 +288,7 @@ function MainApp() {
 
       {/* Cycle message */}
       {cycleMessage && (
-        <div className="absolute top-20 left-0 w-full px-4 z-40 pointer-events-none">
+        <div className="absolute top-28 left-0 w-full px-4 z-40 pointer-events-none">
           <div className="mx-auto max-w-sm rounded-full border border-white/10 bg-black/50 px-4 py-2 text-center text-xs text-white/70 backdrop-blur-xl">
             {cycleMessage}
           </div>
