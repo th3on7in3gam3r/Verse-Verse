@@ -1,6 +1,10 @@
-import { NextResponse } from 'next/server';
+export const MISSING_BIBLE_API_KEY = 'MISSING_BIBLE_API_KEY';
 
-const API_BIBLE_KEY = process.env.API_BIBLE_KEY || process.env.API_BIBLE || process.env.BIBLE_API;
+const API_BIBLE_KEY =
+  process.env.BIBLE_API_KEY ||
+  process.env.BIBLE_API ||
+  process.env.API_BIBLE_KEY ||
+  process.env.API_BIBLE;
 const API_BIBLE_BASE_URL = process.env.API_BIBLE_BASE_URL || 'https://rest.api.bible';
 
 export const BIBLE_TRANSLATION_IDS = {
@@ -18,6 +22,95 @@ export type BibleVerse = {
   translation: BibleTranslationKey;
 };
 
+export type BibleApiErrorCode =
+  | 'MISSING_API_KEY'
+  | 'NOT_FOUND'
+  | 'UPSTREAM_ERROR'
+  | 'INTERNAL_ERROR';
+
+export type BibleApiErrorPayload = {
+  error: string;
+  code: BibleApiErrorCode;
+  detail?: string;
+};
+
+export function classifyBibleError(error: unknown): BibleApiErrorPayload & { status: number } {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message === MISSING_BIBLE_API_KEY) {
+    return {
+      status: 503,
+      code: 'MISSING_API_KEY',
+      error:
+        'Bible API is not configured. Add BIBLE_API_KEY to your .env file and restart the dev server.',
+    };
+  }
+
+  if (message.includes('Could not find scripture reference')) {
+    return {
+      status: 404,
+      code: 'NOT_FOUND',
+      error: message,
+    };
+  }
+
+  if (message.startsWith('API.Bible error')) {
+    return {
+      status: 502,
+      code: 'UPSTREAM_ERROR',
+      error: 'Bible translation service returned an error. Try again in a moment.',
+      detail: message,
+    };
+  }
+
+  return {
+    status: 500,
+    code: 'INTERNAL_ERROR',
+    error: message || 'Failed to fetch Bible passage',
+  };
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&quot;': '"',
+  '&apos;': "'",
+  '&lt;': '<',
+  '&gt;': '>',
+  '&#39;': "'",
+};
+
+function decodeHtmlEntities(text: string): string {
+  let out = text;
+  for (const [entity, char] of Object.entries(HTML_ENTITIES)) {
+    out = out.split(entity).join(char);
+  }
+  return out
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+/** API.Bible returns HTML in passage/verse content — convert to plain readable text. */
+export function plainTextFromBibleContent(raw: string, reference?: string): string {
+  if (!raw) return '';
+  if (!raw.includes('<')) return raw.trim();
+
+  let text = raw
+    .replace(/<span[^>]*class="v"[^>]*>[\s\S]*?<\/span>/gi, '')
+    .replace(/<[^>]+>/g, ' ');
+
+  text = decodeHtmlEntities(text).replace(/\s+/g, ' ').trim();
+
+  if (reference) {
+    const verseMatch = reference.match(/:(\d+)(?:-\d+)?$/);
+    if (verseMatch && text.startsWith(verseMatch[1])) {
+      text = text.slice(verseMatch[1].length).trimStart();
+    }
+  }
+
+  return text;
+}
+
 function getTranslationKeyFromId(id: string | null): BibleTranslationKey {
   if (!id) return 'NIV';
   const found = (Object.keys(BIBLE_TRANSLATION_IDS) as BibleTranslationKey[]).find(
@@ -27,7 +120,7 @@ function getTranslationKeyFromId(id: string | null): BibleTranslationKey {
 }
 
 function normalizeVersePayload(payload: any, translation: BibleTranslationKey): BibleVerse {
-  const text =
+  const rawText =
     payload.text ||
     payload.content ||
     payload.passage?.content ||
@@ -42,6 +135,8 @@ function normalizeVersePayload(payload: any, translation: BibleTranslationKey): 
     payload.id ||
     '';
 
+  const text = plainTextFromBibleContent(String(rawText), String(reference));
+
   const id =
     payload.id ||
     payload.reference ||
@@ -50,7 +145,7 @@ function normalizeVersePayload(payload: any, translation: BibleTranslationKey): 
 
   return {
     id: String(id),
-    text: String(text),
+    text,
     reference: String(reference),
     translation,
   };
@@ -58,7 +153,7 @@ function normalizeVersePayload(payload: any, translation: BibleTranslationKey): 
 
 async function fetchBibleApi(path: string, params: Record<string, string>) {
   if (!API_BIBLE_KEY) {
-    throw new Error('Missing BIBLE_API environment variable');
+    throw new Error(MISSING_BIBLE_API_KEY);
   }
 
   const url = new URL(path, API_BIBLE_BASE_URL);
@@ -91,20 +186,31 @@ export async function searchBibleVerses(query: string, translation: BibleTransla
     limit: '40',
   });
 
-  const hits = Array.isArray(result.data) ? result.data : result.results ?? [];
+  const data = result.data || {};
+  const hits = [...(data.passages || []), ...(data.verses || [])];
 
   return hits.map((item: any) => normalizeVersePayload(item, translation));
 }
 
 export async function fetchBiblePassage(reference: string, translation: BibleTranslationKey) {
   const translationId = BIBLE_TRANSLATION_IDS[translation];
-  const result = await fetchBibleApi(`/v1/bibles/${translationId}/passages`, {
-    reference,
-    include: 'text',
+  
+  // API.Bible doesn't resolve raw reference strings in the /passages endpoint.
+  // We must use the /search endpoint to accurately fetch the text for "Luke 1:37".
+  const result = await fetchBibleApi(`/v1/bibles/${translationId}/search`, {
+    query: reference,
+    limit: '1',
   });
 
-  const payload = Array.isArray(result.data) ? result.data[0] : result.data;
-  return normalizeVersePayload(payload, translation);
+  const data = result.data || {};
+  const match = (data.passages && data.passages[0]) || (data.verses && data.verses[0]);
+
+  if (!match) {
+    throw new Error(`Could not find scripture reference: ${reference}`);
+  }
+
+  // API.Bible returns text that may contain newlines or formatting, normalize handles it
+  return normalizeVersePayload(match, translation);
 }
 
 const DAILY_VERSE_REFERENCES = [

@@ -39,6 +39,19 @@ function normalizeTranslation(value?: string): TranslationKey {
   return TRANSLATION_OPTIONS.includes(up as TranslationKey) ? (up as TranslationKey) : 'NIV';
 }
 
+function translationErrorMessage(data: { error?: string; code?: string }): string {
+  switch (data.code) {
+    case 'MISSING_API_KEY':
+      return 'API key not configured — add BIBLE_API_KEY to .env';
+    case 'NOT_FOUND':
+      return data.error ?? 'Reference not found';
+    case 'UPSTREAM_ERROR':
+      return 'Bible service unavailable — try again';
+    default:
+      return data.error ?? 'Translation unavailable';
+  }
+}
+
 export default function VerseCard({ verse, isVisible = false, onOpenComments, onSeen }: VerseCardProps) {
   const { prefersVideo } = useAuth();
 
@@ -51,6 +64,8 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
   const [verseText,          setVerseText]          = useState(verse.text);
   const [translation,        setTranslation]        = useState<TranslationKey>(normalizeTranslation(verse.translation));
   const [translationLoading, setTranslationLoading] = useState(false);
+  const [pendingTranslation, setPendingTranslation] = useState<TranslationKey | null>(null);
+  const [translationError,   setTranslationError]   = useState<string | null>(null);
 
   const lastAmenAtRef  = useRef<number>(0);
   const lastTapRef     = useRef<number>(0);
@@ -139,6 +154,8 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
   const changeTranslation = async (key: TranslationKey) => {
     if (key === translation || translationLoading) return;
     setTranslationLoading(true);
+    setPendingTranslation(key);
+    setTranslationError(null);
     try {
       const res  = await fetch(`/api/bible/passage?ref=${encodeURIComponent(verse.reference)}&translation=${key}`);
       const data = await res.json();
@@ -146,9 +163,17 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
         setTranslation(key);
         setVerseText(data.verse.text);
         localStorage.setItem('verseverse_translation_preference', key);
+      } else {
+        setTranslationError(translationErrorMessage(data));
+        setTimeout(() => setTranslationError(null), 5000);
       }
-    } catch { /* ignore */ }
-    finally { setTranslationLoading(false); }
+    } catch {
+      setTranslationError('Network error — try again');
+      setTimeout(() => setTranslationError(null), 5000);
+    } finally {
+      setTranslationLoading(false);
+      setPendingTranslation(null);
+    }
   };
 
   return (
@@ -236,7 +261,16 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
 
       {/* ── Bottom Left Controls Stack ───────────────────────────────────── */}
       <div className="absolute left-4 bottom-20 z-30 flex flex-col justify-end items-start gap-2.5 pointer-events-none w-64">
-        
+
+        {/* Translation error toast */}
+        {translationError && (
+          <div className="pointer-events-none w-full">
+            <span className="text-[10px] font-semibold text-red-300 bg-black/60 border border-red-500/40 px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1.5">
+              ⚠ {translationError}
+            </span>
+          </div>
+        )}
+
         <div className="flex gap-2 items-center">
           {/* Amen count */}
           <div className="pointer-events-auto">
@@ -246,16 +280,33 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
           </div>
 
           {/* Translation switcher */}
-          <div className="pointer-events-auto flex items-center gap-1 bg-black/40 border border-white/10 px-1.5 py-1 rounded-full backdrop-blur-md shadow-lg">
-            {TRANSLATION_OPTIONS.map(key => (
-              <button key={key} type="button" onClick={() => changeTranslation(key)}
-                className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                  translation === key ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'
-                }`}>
-                {key}
-              </button>
-            ))}
-            {translationLoading && <span className="text-white/50 text-[9px] ml-1 pr-2">…</span>}
+          <div
+            className={`pointer-events-auto flex items-center gap-1 bg-black/40 border px-1.5 py-1 rounded-full backdrop-blur-md shadow-lg transition ${
+              translationError ? 'border-red-500/50' : 'border-white/10'
+            }`}
+            aria-busy={translationLoading}
+          >
+            {TRANSLATION_OPTIONS.map(key => {
+              const isActive = translation === key;
+              const isPending = pendingTranslation === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => changeTranslation(key)}
+                  disabled={translationLoading}
+                  aria-label={`Switch to ${key} translation`}
+                  aria-pressed={isActive}
+                  className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition cursor-pointer disabled:cursor-wait min-w-[2rem] ${
+                    isActive
+                      ? 'bg-white text-black shadow-sm'
+                      : 'text-white/60 hover:text-white disabled:opacity-40'
+                  } ${isPending ? 'animate-pulse' : ''}`}
+                >
+                  {isPending ? '…' : key}
+                </button>
+              );
+            })}
           </div>
         </div>
 
