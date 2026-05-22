@@ -20,6 +20,7 @@ import SearchFeed from './components/SearchFeed';
 import CardBuilderModal from './components/CardBuilderModal';
 import OnboardingTutorial from './components/OnboardingTutorial';
 import BibleFunLandStudiosBanner from './components/BibleFunLandStudiosBanner';
+import MobileHeader from './components/MobileHeader';
 
 interface VerseData {
   id: string;
@@ -162,9 +163,9 @@ function MainApp() {
       {/* ── Header overlay — floats above the feed, takes no space ─────────── */}
       <div className="absolute inset-x-0 top-0 z-[55] pointer-events-none" style={{ paddingTop: '2.25rem' }}>
         
-        {/* Tap/hover zone to reveal header — never covers Search / streak (right ~13rem) */}
+        {/* Tap/hover zone to reveal header (desktop feed scroll) */}
         <div
-          className="absolute left-0 top-0 h-24 z-0 pointer-events-auto cursor-pointer right-[13rem] sm:right-[14rem] md:right-[18rem]"
+          className="absolute left-0 top-0 h-24 z-0 pointer-events-auto cursor-pointer right-[13rem] sm:right-[14rem] md:right-[18rem] max-md:hidden"
           onMouseEnter={() => setIsHoveringHeader(true)}
           onMouseLeave={() => setIsHoveringHeader(false)}
           onClick={() => setIsHoveringHeader((p) => !p)}
@@ -172,30 +173,46 @@ function MainApp() {
         />
 
         {/* Gradient scrim so controls are readable over any background */}
-        <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 via-black/20 to-transparent pointer-events-none transition-opacity duration-500 ${shouldHideHeader ? 'opacity-0' : 'opacity-100'}`} />
+        <div
+          className={`absolute inset-x-0 top-0 h-44 md:h-32 bg-gradient-to-b from-black/70 via-black/20 to-transparent pointer-events-none transition-opacity duration-500 max-md:opacity-100 ${
+            shouldHideHeader ? 'md:opacity-0' : 'opacity-100'
+          }`}
+        />
 
-        {/* Controls row — slides up when scrolled past first card */}
+        {/* Controls — mobile: two-row header + category tabs; desktop: single row */}
         <div
           onMouseEnter={() => setIsHoveringHeader(true)}
           onMouseLeave={() => setIsHoveringHeader(false)}
-          className={`relative z-[60] transition-all duration-500 ease-in-out pointer-events-auto ${shouldHideHeader ? '-translate-y-24 opacity-0 pointer-events-none' : 'opacity-100'}`}
+          className={`relative z-[60] transition-all duration-500 ease-in-out pointer-events-auto max-md:opacity-100 max-md:translate-y-0 ${
+            shouldHideHeader
+              ? 'md:-translate-y-24 md:opacity-0 md:pointer-events-none'
+              : 'opacity-100'
+          }`}
         >
-          <div className="flex items-center justify-between gap-2 px-4 pt-4 md:px-6">
+          <MobileHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            authLoading={authLoading}
+            onOpenDashboard={() => setIsDashboardOpen(true)}
+            onOpenCompanion={() => setAiCompanionOpen(true)}
+            categories={categories}
+            activeCategoryIndex={activeCategoryIndex}
+            onCategorySelect={scrollToCategory}
+          />
 
-            {/* LEFT: Companion + Ambience — shrink-0 so they never compress */}
+          <div className="hidden md:flex items-center justify-between gap-2 px-6 pt-4">
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setAiCompanionOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-black/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-teal-300 shadow-lg backdrop-blur-xl transition hover:bg-black/60 hover:text-white whitespace-nowrap"
               >
                 <Sparkles size={13} className="text-teal-300" />
-                <span className="hidden sm:inline">Companion</span>
+                <span>Companion</span>
               </button>
               <BackgroundMusic />
             </div>
 
-            {/* CENTRE: Category pills — desktop only, takes remaining space */}
-            <div className="hidden md:flex flex-1 items-center justify-center gap-3 rounded-full border border-white/10 bg-black/30 px-4 py-2 backdrop-blur-xl mx-4">
+            <div className="flex flex-1 items-center justify-center gap-3 rounded-full border border-white/10 bg-black/30 px-4 py-2 backdrop-blur-xl mx-4">
               {categories.map((cat, index) => (
                 <button
                   key={cat}
@@ -209,7 +226,6 @@ function MainApp() {
               ))}
             </div>
 
-            {/* RIGHT: Search + Streak — above tap-to-reveal zone on mobile */}
             <div className="relative z-[70] flex items-center gap-2 shrink-0">
               <HeaderSearch value={searchQuery} onChange={setSearchQuery} />
               {authLoading ? <HeaderAuthSkeleton /> : <StreakCounter onOpenDashboard={() => setIsDashboardOpen(true)} />}
@@ -221,8 +237,8 @@ function MainApp() {
       {/* Verse of the Day — daily streak (For You, first card) */}
       {!isSearching && activeCategoryIndex === 0 && currentVerseIndex === 0 && (
         <div
-          className={`absolute inset-x-0 top-24 md:top-28 z-[45] transition-all duration-500 ease-out pointer-events-auto ${
-            shouldHideHeader ? 'opacity-90 translate-y-0' : 'opacity-100'
+          className={`absolute inset-x-0 top-[9.25rem] md:top-28 z-[45] transition-all duration-500 ease-out pointer-events-auto px-3 md:px-0 ${
+            shouldHideHeader ? 'md:opacity-90 md:translate-y-0' : 'opacity-100'
           }`}
         >
           <VerseOfTheDay />
@@ -231,7 +247,7 @@ function MainApp() {
 
       {/* Cycle message */}
       {cycleMessage && (
-        <div className="absolute top-28 left-0 w-full px-4 z-40 pointer-events-none">
+        <div className="absolute top-[10.25rem] md:top-28 left-0 w-full px-4 z-40 pointer-events-none">
           <div className="mx-auto max-w-sm rounded-full border border-white/10 bg-black/50 px-4 py-2 text-center text-xs text-white/70 backdrop-blur-xl">
             {cycleMessage}
           </div>

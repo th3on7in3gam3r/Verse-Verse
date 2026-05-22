@@ -214,9 +214,9 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
 
       {/* ── Main verse content ───────────────────────────────────────────── */}
       {/* Always visible — opacity animation only plays when card becomes active */}
-      <div className="flex-1 w-full max-w-lg flex flex-col justify-center items-center px-8 pt-16 pb-8 relative z-10">
+      <div className="flex-1 w-full max-w-lg flex flex-col justify-center items-center px-5 pt-[7.5rem] pb-32 sm:px-8 md:pt-16 md:pb-8 relative z-10">
         <p
-          className="text-white text-3xl md:text-[2.6rem] font-serif text-center mb-6 leading-snug drop-shadow-2xl"
+          className="text-white text-[1.65rem] leading-snug sm:text-3xl md:text-[2.6rem] font-serif text-center mb-5 sm:mb-6 drop-shadow-2xl"
           style={{
             textShadow: '0 4px 16px rgba(0,0,0,0.9)',
             opacity: isVisible ? 1 : 0.85,
@@ -242,25 +242,31 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
       </div>
 
       {/* ── Right sidebar actions ────────────────────────────────────────── */}
-      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-5 z-20">
+      <div
+        className="absolute right-2.5 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:right-4 md:bottom-24 flex flex-col items-center gap-3.5 md:gap-5 z-20"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         {[
-          { icon: <Heart size={26} className={isLiked ? 'text-red-500 fill-red-500' : 'text-white'} />, label: isLiked ? 'Saved' : 'Save', action: toggleLike },
-          { icon: <MessageCircle size={26} className="text-white" />, label: 'Prayers', action: () => onOpenComments(verse.id) },
-          { icon: <Share2 size={26} className="text-white" />, label: 'Share', action: handleShare },
-          { icon: <Wind size={26} className="text-white" />, label: 'Meditate', action: () => setIsMeditating(true) },
+          { icon: <Heart size={24} className={isLiked ? 'text-red-500 fill-red-500' : 'text-white'} />, label: isLiked ? 'Saved' : 'Save', action: toggleLike },
+          { icon: <MessageCircle size={24} className="text-white" />, label: 'Prayers', action: () => onOpenComments(verse.id) },
+          { icon: <Share2 size={24} className="text-white" />, label: 'Share', action: handleShare },
+          { icon: <Wind size={24} className="text-white" />, label: 'Meditate', action: () => setIsMeditating(true) },
         ].map(({ icon, label, action }) => (
           <button key={label} type="button" onClick={action}
-            className="flex flex-col items-center gap-1 group btn-interactive cursor-pointer">
-            <div className="bg-black/40 border border-white/10 p-3 rounded-full backdrop-blur-md group-hover:bg-black/60 transition">
+            className="flex flex-col items-center gap-0.5 md:gap-1 group btn-interactive cursor-pointer">
+            <div className="bg-black/40 border border-white/10 p-2.5 md:p-3 rounded-full backdrop-blur-md group-hover:bg-black/60 transition">
               {icon}
             </div>
-            <span className="text-white text-[11px] font-semibold drop-shadow-md">{label}</span>
+            <span className="text-white text-[10px] md:text-[11px] font-semibold drop-shadow-md">{label}</span>
           </button>
         ))}
       </div>
 
       {/* ── Bottom Left Controls Stack ───────────────────────────────────── */}
-      <div className="absolute left-4 bottom-20 z-30 flex flex-col justify-end items-start gap-2.5 pointer-events-none w-64">
+      <div
+        className="absolute left-3 right-14 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] md:left-4 md:right-auto md:bottom-20 z-30 flex flex-col justify-end items-start gap-2 pointer-events-none md:w-64"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
 
         {/* Translation error toast */}
         {translationError && (
@@ -271,7 +277,7 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
           </div>
         )}
 
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center max-w-full">
           {/* Amen count */}
           <div className="pointer-events-auto">
             <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1.5">
@@ -317,7 +323,9 @@ export default function VerseCard({ verse, isVisible = false, onOpenComments, on
       </div>
 
       {/* ── Branding watermark ───────────────────────────────────────────── */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1">
+      <div
+        className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 pointer-events-none"
+      >
         <span className="text-white/30 text-[9px] font-bold tracking-[0.35em] uppercase pointer-events-none">
           † VERSE VERSE
         </span>

@@ -11,7 +11,7 @@ import {
   STREAK_UPDATED_EVENT,
 } from '../../lib/streak';
 
-export default function StreakCounter({ onOpenDashboard }) {
+export default function StreakCounter({ onOpenDashboard, compact = false }) {
   const [streak, setStreak] = useState(0);
   const [todayDone, setTodayDone] = useState(false);
   const [atRisk, setAtRisk] = useState(false);
@@ -61,7 +61,9 @@ export default function StreakCounter({ onOpenDashboard }) {
             ? 'Complete Verse of the Day before midnight!'
             : 'Complete Verse of the Day to start your streak'
       }
-      className={`group/streak relative bg-black/45 hover:bg-orange-500/10 border backdrop-blur-xl rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg transition-all cursor-pointer ${
+      className={`group/streak relative bg-black/45 hover:bg-orange-500/10 border backdrop-blur-xl rounded-full flex items-center shadow-lg transition-all cursor-pointer shrink-0 ${
+        compact ? 'px-2 py-1.5 gap-1.5' : 'px-3 py-1.5 gap-2'
+      } ${
         pulse ? 'streak-pill-pop border-orange-400/60 shadow-orange-500/30' : ''
       } ${
         todayDone
@@ -86,13 +88,15 @@ export default function StreakCounter({ onOpenDashboard }) {
           <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-black/80" />
         )}
       </div>
-      <div className="flex flex-col items-start leading-none">
+      <div className={`flex leading-none ${compact ? 'items-center' : 'flex-col items-start'}`}>
         <span className="text-white font-black text-sm tabular-nums">{streak}</span>
-        <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">
-          {streak === 1 ? 'day' : 'days'}
-        </span>
+        {!compact && (
+          <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">
+            {streak === 1 ? 'day' : 'days'}
+          </span>
+        )}
       </div>
-      {!user && (
+      {!user && !compact && (
         <span className="max-w-0 overflow-hidden group-hover/streak:max-w-[100px] transition-all duration-500 text-[9px] text-orange-300/90 font-medium whitespace-nowrap">
           Save streak
         </span>
@@ -126,12 +130,16 @@ export default function StreakCounter({ onOpenDashboard }) {
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-lg cursor-pointer relative z-50"
+            className={`bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md text-white rounded-full text-xs font-medium transition-all flex items-center shadow-lg cursor-pointer relative z-50 shrink-0 ${
+              compact ? 'min-w-[40px] min-h-[40px] justify-center p-0' : 'px-3 py-1.5 gap-1.5'
+            }`}
           >
-            <div className="w-4 h-4 rounded-full bg-purple-600 flex items-center justify-center text-[10px] font-bold">
+            <div className={`rounded-full bg-purple-600 flex items-center justify-center font-bold text-white ${
+              compact ? 'w-8 h-8 text-xs' : 'w-4 h-4 text-[10px]'
+            }`}>
               {user.name ? user.name[0].toUpperCase() : 'U'}
             </div>
-            <span className="max-w-[70px] truncate">{user.name}</span>
+            {!compact && <span className="max-w-[70px] truncate hidden sm:inline">{user.name}</span>}
           </button>
 
           {menuOpen && (
@@ -165,9 +173,11 @@ export default function StreakCounter({ onOpenDashboard }) {
       ) : (
         <button
           onClick={() => openAuthModal()}
-          className="bg-purple-600/80 hover:bg-purple-600 border border-purple-500/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 transition-all cursor-pointer"
+          className={`bg-purple-600/80 hover:bg-purple-600 border border-purple-500/20 backdrop-blur-sm text-white rounded-full text-xs font-semibold shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 transition-all cursor-pointer shrink-0 ${
+            compact ? 'min-w-[40px] min-h-[40px] px-2 text-[10px]' : 'px-4 py-1.5'
+          }`}
         >
-          Sign In
+          {compact ? 'In' : 'Sign In'}
         </button>
       )}
     </div>

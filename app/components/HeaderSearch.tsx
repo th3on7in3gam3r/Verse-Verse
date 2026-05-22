@@ -24,7 +24,7 @@ export default function HeaderSearch({ value, onChange }: HeaderSearchProps) {
   return (
     <div
       role="search"
-      className="relative z-[80] flex items-center gap-1.5 min-h-[44px] md:min-h-[38px] rounded-full border border-white/15 bg-black/45 hover:bg-black/55 backdrop-blur-xl px-2 md:px-3 py-1 transition-all duration-200 focus-within:border-teal-500/40 focus-within:bg-black/60 focus-within:shadow-lg focus-within:shadow-teal-500/15 w-[11.5rem] sm:w-52 md:w-56 touch-manipulation"
+      className="relative z-[80] flex items-center gap-1 min-h-[40px] md:min-h-[38px] rounded-full border border-white/15 bg-black/45 hover:bg-black/55 backdrop-blur-xl px-1.5 md:px-3 py-1 transition-all duration-200 focus-within:border-teal-500/40 focus-within:bg-black/60 focus-within:shadow-lg focus-within:shadow-teal-500/15 w-[7.25rem] sm:w-44 md:w-56 touch-manipulation shrink-0"
     >
       <button
         type="button"
@@ -32,7 +32,7 @@ export default function HeaderSearch({ value, onChange }: HeaderSearchProps) {
           e.stopPropagation();
           focusInput();
         }}
-        className="shrink-0 flex items-center justify-center min-w-[36px] min-h-[36px] md:min-w-[28px] md:min-h-[28px] rounded-full hover:bg-white/10 cursor-pointer transition-colors"
+        className="shrink-0 flex items-center justify-center min-w-[32px] min-h-[32px] md:min-w-[28px] md:min-h-[28px] rounded-full hover:bg-white/10 cursor-pointer transition-colors"
         aria-label="Focus search"
       >
         <Search size={17} className="text-white/75" />
