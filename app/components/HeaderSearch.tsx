@@ -43,7 +43,7 @@ export default function HeaderSearch({ value, onChange }: HeaderSearchProps) {
         type="search"
         enterKeyHint="search"
         autoComplete="off"
-        placeholder="Search verses…"
+        placeholder="Book, chapter, or word…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="flex-1 min-w-0 bg-transparent border-none outline-none text-white text-[11px] md:text-xs font-bold tracking-wide placeholder:text-white/40 py-1"

@@ -16,10 +16,10 @@ import PrayerWaveOverlay from './components/PrayerWaveOverlay';
 import { Sparkles } from 'lucide-react';
 import UserDashboardModal from './components/UserDashboardModal';
 import HeaderSearch from './components/HeaderSearch';
+import SearchFeed from './components/SearchFeed';
 import CardBuilderModal from './components/CardBuilderModal';
 import OnboardingTutorial from './components/OnboardingTutorial';
 import BibleFunLandStudiosBanner from './components/BibleFunLandStudiosBanner';
-import type { BibleVerse } from '../lib/bible';
 
 interface VerseData {
   id: string;
@@ -65,14 +65,10 @@ function MainApp() {
   const [selectedVerseForShare, setSelectedVerseForShare] = useState<RawVerse | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<BibleVerse[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState('');
   const [cycleMessage, setCycleMessage] = useState('');
   const [preferredTranslation, setPreferredTranslation] = useState<TranslationPreference>('NIV');
   const [seenVerseIds, setSeenVerseIds] = useState<Set<string>>(new Set());
 
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const horizontalContainerRef = useRef<HTMLDivElement | null>(null);
   const categories = ['For You', 'Strength', 'Comfort', 'Love'];
   const totalVerseCount = versesData.length;
@@ -88,60 +84,8 @@ function MainApp() {
   }, []);
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setSearchError('');
-      setCycleMessage('');
-      return;
-    }
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    setSearchLoading(true);
-    setSearchError('');
-
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `/api/bible/search?q=${encodeURIComponent(searchQuery.trim())}&translation=${preferredTranslation}`
-        );
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data?.error || 'Search failed');
-        }
-
-        const results: BibleVerse[] = data.results ?? [];
-        const unseen = results.filter((verse) => !seenVerseIds.has(verse.id));
-
-        if (unseen.length === 0 && results.length > 0) {
-          setCycleMessage("You've seen all verses — cycling back 🔄");
-          setSeenVerseIds(new Set());
-          setSearchResults(results);
-        } else {
-          setCycleMessage('');
-          setSearchResults(unseen.length > 0 ? unseen : results);
-        }
-
-        if (results.length === 0) {
-          setSearchError(`No verses found for '${searchQuery.trim()}'`);
-        }
-      } catch (err: any) {
-        setSearchResults([]);
-        setSearchError(err.message || 'Search failed');
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 400);
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery, preferredTranslation, seenVerseIds]);
+    if (!searchQuery.trim()) setCycleMessage('');
+  }, [searchQuery]);
 
   const handleRecordSeen = useCallback(
     (verseId: string) => {
@@ -288,30 +232,11 @@ function MainApp() {
       {/* ── Full-height verse feed — no top padding ─────────────────────────── */}
       <div className="absolute inset-0">
         {isSearching ? (
-          <div className="w-full h-full overflow-y-auto pb-20 pt-24 no-scrollbar px-4">
-            {searchLoading ? (
-              <div className="mx-auto max-w-3xl space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-[520px] rounded-3xl bg-white/5 animate-pulse" />
-                ))}
-              </div>
-            ) : searchError ? (
-              <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/70">
-                {searchError}
-              </div>
-            ) : (
-              searchResults.map((verse) => (
-                <div key={`search-${verse.id}`} className="w-full h-screen snap-section relative">
-                  <VerseCard
-                    verse={verse}
-                    isVisible
-                    onOpenComments={setCommentsOpenFor}
-                    onSeen={handleRecordSeen}
-                  />
-                </div>
-              ))
-            )}
-          </div>
+          <SearchFeed
+            query={searchQuery}
+            translation={preferredTranslation}
+            onOpenComments={setCommentsOpenFor}
+          />
         ) : (
           <div
             ref={horizontalContainerRef}

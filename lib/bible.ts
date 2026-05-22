@@ -189,7 +189,9 @@ export async function searchBibleVerses(query: string, translation: BibleTransla
   const data = result.data || {};
   const hits = [...(data.passages || []), ...(data.verses || [])];
 
-  return hits.map((item: any) => normalizeVersePayload(item, translation));
+  return hits
+    .map((item: any) => normalizeVersePayload(item, translation))
+    .filter((v) => v.text.trim().length > 0 && v.reference.trim().length > 0);
 }
 
 export async function fetchBiblePassage(reference: string, translation: BibleTranslationKey) {
