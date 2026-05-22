@@ -67,11 +67,11 @@ function MainApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cycleMessage, setCycleMessage] = useState('');
   const [preferredTranslation, setPreferredTranslation] = useState<TranslationPreference>('NIV');
-  const [seenVerseIds, setSeenVerseIds] = useState<Set<string>>(new Set());
+  const [seenForYouIds, setSeenForYouIds] = useState<Set<string>>(new Set());
 
   const horizontalContainerRef = useRef<HTMLDivElement | null>(null);
   const categories = ['For You', 'Strength', 'Comfort', 'Love'];
-  const totalVerseCount = versesData.length;
+  const forYouVerseCount = verses.length;
 
   useEffect(() => {
     const completed = localStorage.getItem('verseverse_tutorial_completed');
@@ -87,22 +87,31 @@ function MainApp() {
     if (!searchQuery.trim()) setCycleMessage('');
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!cycleMessage) return;
+    const timer = window.setTimeout(() => setCycleMessage(''), 5000);
+    return () => window.clearTimeout(timer);
+  }, [cycleMessage]);
+
   const handleRecordSeen = useCallback(
-    (verseId: string) => {
-      setSeenVerseIds((prev) => {
+    (verseId: string, category: string) => {
+      // Only track the main "For You" feed (40 curated cards) — not Strength/Comfort/Love or search
+      if (category !== 'For You') return;
+
+      setSeenForYouIds((prev) => {
         if (prev.has(verseId)) return prev;
         const next = new Set(prev);
         next.add(verseId);
 
-        if (next.size >= totalVerseCount) {
-          setCycleMessage("You've seen all verses — cycling back 🔄");
+        if (next.size >= forYouVerseCount) {
+          setCycleMessage("You've seen today's For You feed — starting over 🔄");
           return new Set();
         }
 
         return next;
       });
     },
-    [totalVerseCount]
+    [forYouVerseCount],
   );
 
   const categoryVerses = {
@@ -257,7 +266,7 @@ function MainApp() {
                           verse={verse}
                           isVisible={isVisible}
                           onOpenComments={setCommentsOpenFor}
-                          onSeen={handleRecordSeen}
+                          onSeen={(verseId) => handleRecordSeen(verseId, cat)}
                         />
                       </div>
                     );
