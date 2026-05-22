@@ -13,8 +13,9 @@ import AuthModal from './components/AuthModal';
 import AICompanionDrawer from './components/AICompanionDrawer';
 import PrayerWaveNotifier from './components/PrayerWaveNotifier';
 import PrayerWaveOverlay from './components/PrayerWaveOverlay';
-import { Sparkles, Search } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import UserDashboardModal from './components/UserDashboardModal';
+import HeaderSearch from './components/HeaderSearch';
 import CardBuilderModal from './components/CardBuilderModal';
 import OnboardingTutorial from './components/OnboardingTutorial';
 import BibleFunLandStudiosBanner from './components/BibleFunLandStudiosBanner';
@@ -194,8 +195,8 @@ function MainApp() {
 
   const currentCategoryName = categories[activeCategoryIndex];
   const currentVerseIndex = activeVerseIndices[currentCategoryName] || 0;
-  const shouldHideHeader = currentVerseIndex > 0 && !isHoveringHeader;
   const isSearching = searchQuery.trim().length > 0;
+  const shouldHideHeader = currentVerseIndex > 0 && !isHoveringHeader && !isSearching;
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden select-none">
@@ -206,24 +207,25 @@ function MainApp() {
       </div>
 
       {/* ── Header overlay — floats above the feed, takes no space ─────────── */}
-      <div className="absolute inset-x-0 top-0 z-40 pointer-events-none" style={{ paddingTop: '2.25rem' }}>
+      <div className="absolute inset-x-0 top-0 z-[55] pointer-events-none" style={{ paddingTop: '2.25rem' }}>
         
-        {/* Invisible hit area for hover/tap to reveal header */}
-        <div 
-          className="absolute inset-x-0 top-0 h-24 pointer-events-auto cursor-pointer"
+        {/* Tap/hover zone to reveal header — never covers Search / streak (right ~13rem) */}
+        <div
+          className="absolute left-0 top-0 h-24 z-0 pointer-events-auto cursor-pointer right-[13rem] sm:right-[14rem] md:right-[18rem]"
           onMouseEnter={() => setIsHoveringHeader(true)}
           onMouseLeave={() => setIsHoveringHeader(false)}
-          onClick={() => setIsHoveringHeader(p => !p)}
+          onClick={() => setIsHoveringHeader((p) => !p)}
+          aria-hidden
         />
 
         {/* Gradient scrim so controls are readable over any background */}
         <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/70 via-black/20 to-transparent pointer-events-none transition-opacity duration-500 ${shouldHideHeader ? 'opacity-0' : 'opacity-100'}`} />
 
         {/* Controls row — slides up when scrolled past first card */}
-        <div 
+        <div
           onMouseEnter={() => setIsHoveringHeader(true)}
           onMouseLeave={() => setIsHoveringHeader(false)}
-          className={`relative z-40 transition-all duration-500 ease-in-out pointer-events-auto ${shouldHideHeader ? '-translate-y-24 opacity-0 pointer-events-none' : 'opacity-100'}`}
+          className={`relative z-[60] transition-all duration-500 ease-in-out pointer-events-auto ${shouldHideHeader ? '-translate-y-24 opacity-0 pointer-events-none' : 'opacity-100'}`}
         >
           <div className="flex items-center justify-between gap-2 px-4 pt-4 md:px-6">
 
@@ -254,21 +256,9 @@ function MainApp() {
               ))}
             </div>
 
-            {/* RIGHT: Streak, Search + Auth — shrink-0 so they never compress */}
-            <div className="flex items-center gap-2 shrink-0">
-              
-              {/* Premium Expanding Search Pill */}
-              <div className={`relative flex items-center bg-black/30 backdrop-blur-xl border border-white/10 rounded-full px-2.5 py-1.5 group transition-all duration-300 ${searchQuery ? 'bg-black/50 border-teal-500/30' : 'hover:bg-black/40'}`}>
-                <Search size={14} className={`shrink-0 transition-colors ${searchQuery ? 'text-teal-400' : 'text-white/50 group-hover:text-white/80'}`} />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent border-none outline-none text-white text-[11px] font-bold tracking-wide transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] placeholder:text-white/30 ${searchQuery ? 'w-28 md:w-40 ml-2' : 'w-0 md:w-20 ml-0 md:ml-2 focus:w-28 md:focus:w-40 focus:ml-2'}`}
-                />
-              </div>
-
+            {/* RIGHT: Search + Streak — above tap-to-reveal zone on mobile */}
+            <div className="relative z-[70] flex items-center gap-2 shrink-0">
+              <HeaderSearch value={searchQuery} onChange={setSearchQuery} />
               {authLoading ? <HeaderAuthSkeleton /> : <StreakCounter onOpenDashboard={() => setIsDashboardOpen(true)} />}
             </div>
           </div>
@@ -278,7 +268,7 @@ function MainApp() {
       {/* Verse of the Day — daily streak (For You, first card) */}
       {!isSearching && activeCategoryIndex === 0 && currentVerseIndex === 0 && (
         <div
-          className={`absolute inset-x-0 top-24 md:top-28 z-50 transition-all duration-500 ease-out ${
+          className={`absolute inset-x-0 top-24 md:top-28 z-[45] transition-all duration-500 ease-out pointer-events-auto ${
             shouldHideHeader ? 'opacity-90 translate-y-0' : 'opacity-100'
           }`}
         >
