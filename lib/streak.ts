@@ -1,11 +1,8 @@
+import { computeNextStreak, todayDateString, type StreakData } from './streakCore';
+
 export const STREAK_STORAGE_KEY = 'verse_streak';
 export const VOTD_COMPLETED_PREFIX = 'votd_completed_';
 export const STREAK_UPDATED_EVENT = 'streakUpdated';
-
-export type StreakData = {
-  count: number;
-  lastActiveDate: string | null;
-};
 
 export type StreakUpdateDetail = {
   streak: StreakData;
@@ -13,15 +10,18 @@ export type StreakUpdateDetail = {
   streakIncreased: boolean;
 };
 
-export function todayDateString(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
 export function yesterdayDateString(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().split('T')[0];
 }
+
+type StreakSyncPayload = {
+  streak: StreakData;
+  completedDates: string[];
+  isNewCompletion?: boolean;
+  streakIncreased?: boolean;
+};
 
 export function getStreakData(): StreakData {
   if (typeof window === 'undefined') return { count: 0, lastActiveDate: null };
@@ -48,7 +48,52 @@ export function isDateCompleted(date: string): boolean {
   return localStorage.getItem(VOTD_COMPLETED_PREFIX + date) === 'true';
 }
 
-export function markTodayCompleted(): StreakUpdateDetail {
+function getCompletedDates(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  return Object.keys(localStorage)
+    .filter((key) => key.startsWith(VOTD_COMPLETED_PREFIX) && localStorage.getItem(key) === 'true')
+    .map((key) => key.slice(VOTD_COMPLETED_PREFIX.length))
+    .sort();
+}
+
+function writeCompletedDates(dates: string[]) {
+  if (typeof window === 'undefined') return;
+
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith(VOTD_COMPLETED_PREFIX))
+    .forEach((key) => localStorage.removeItem(key));
+
+  dates.forEach((date) => {
+    localStorage.setItem(VOTD_COMPLETED_PREFIX + date, 'true');
+  });
+}
+
+function writeStreakData(streak: StreakData) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streak));
+}
+
+function dispatchStreakUpdated(detail: StreakUpdateDetail) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<StreakUpdateDetail>(STREAK_UPDATED_EVENT, { detail }));
+}
+
+function applySyncedState(payload: StreakSyncPayload, fallbackDetail?: StreakUpdateDetail): StreakUpdateDetail {
+  writeCompletedDates(payload.completedDates);
+  writeStreakData(payload.streak);
+
+  const detail: StreakUpdateDetail = {
+    streak: payload.streak,
+    isNewCompletion: payload.isNewCompletion ?? fallbackDetail?.isNewCompletion ?? false,
+    streakIncreased: payload.streakIncreased ?? fallbackDetail?.streakIncreased ?? false,
+  };
+
+  dispatchStreakUpdated(detail);
+  return detail;
+}
+
+export async function markTodayCompleted(): Promise<StreakUpdateDetail> {
   const today = todayDateString();
   const alreadyDone = isTodayCompleted();
 
@@ -60,28 +105,63 @@ export function markTodayCompleted(): StreakUpdateDetail {
   localStorage.setItem(VOTD_COMPLETED_PREFIX + today, 'true');
 
   const current = getStreakData();
-  const yesterday = yesterdayDateString();
-  let newCount = 1;
+  const streak = computeNextStreak(current, today);
+  writeStreakData(streak);
 
-  if (current.lastActiveDate === yesterday) {
-    newCount = current.count + 1;
-  } else if (current.lastActiveDate === today) {
-    newCount = Math.max(current.count, 1);
-  } else {
-    newCount = 1;
-  }
-
-  const streak: StreakData = { count: newCount, lastActiveDate: today };
-  localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streak));
-
-  const streakIncreased = newCount > current.count;
+  const streakIncreased = streak.count > current.count;
   const detail: StreakUpdateDetail = { streak, isNewCompletion: true, streakIncreased };
+  dispatchStreakUpdated(detail);
 
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent<StreakUpdateDetail>(STREAK_UPDATED_EVENT, { detail }));
+  try {
+    const response = await fetch('/api/streak/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ date: today }),
+    });
+
+    if (response.ok) {
+      const payload = (await response.json()) as StreakSyncPayload;
+      return applySyncedState(payload, detail);
+    }
+
+    if (response.status !== 401) {
+      console.error('Failed to persist streak completion:', await response.text());
+    }
+  } catch (error) {
+    console.error('Failed to sync streak completion:', error);
   }
 
   return detail;
+}
+
+export async function syncStreakToAccount(): Promise<StreakData | null> {
+  try {
+    const response = await fetch('/api/streak/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        completedDates: getCompletedDates(),
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status !== 401) {
+        console.error('Failed to sync streak:', await response.text());
+      }
+      return null;
+    }
+
+    const payload = (await response.json()) as StreakSyncPayload;
+    const detail = applySyncedState(payload);
+    return detail.streak;
+  } catch (error) {
+    console.error('Failed to sync streak to account:', error);
+    return null;
+  }
 }
 
 export function getWeekCompletionMap(): { dates: string[]; completions: Record<string, boolean> } {

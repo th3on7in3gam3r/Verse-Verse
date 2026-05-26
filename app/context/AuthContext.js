@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { syncStreakToAccount } from '../../lib/streak';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,7 @@ export function AuthProvider({ children }) {
         const data = await res.json();
         if (data.user) {
           setUser(data.user);
+          await syncStreakToAccount();
         }
       } catch (err) {
         console.error('Failed to load session:', err);
@@ -69,6 +71,7 @@ export function AuthProvider({ children }) {
       throw new Error(data.error || 'Failed to login');
     }
 
+    await syncStreakToAccount();
     setUser(data.user);
     setIsAuthModalOpen(false);
     
@@ -91,6 +94,7 @@ export function AuthProvider({ children }) {
       throw new Error(data.error || 'Failed to register');
     }
 
+    await syncStreakToAccount();
     setUser(data.user);
     setIsAuthModalOpen(false);
 

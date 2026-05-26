@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, UIEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, UIEvent, useCallback, useEffect, useRef, useState } from 'react';
 import versesData from '../data/verses.json';
 import { getDailyShuffledVerses } from '../lib/shuffleVerses';
 import VerseCard from './components/VerseCard';
@@ -48,9 +48,25 @@ function HeaderAuthSkeleton() {
   );
 }
 
+function FeedLoadingState() {
+  return (
+    <div className="w-full h-full flex items-center justify-center px-6">
+      <div className="w-full max-w-xl rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl shadow-2xl">
+        <div className="h-4 w-28 rounded-full bg-white/10 animate-pulse" />
+        <div className="mt-6 space-y-3">
+          <div className="h-8 w-full rounded-xl bg-white/10 animate-pulse" />
+          <div className="h-8 w-11/12 rounded-xl bg-white/10 animate-pulse" />
+          <div className="h-8 w-10/12 rounded-xl bg-white/10 animate-pulse" />
+        </div>
+        <div className="mt-6 h-4 w-36 rounded-full bg-white/10 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 function MainApp() {
   const { loading: authLoading } = useAuth();
-  const verses = useMemo(() => getDailyShuffledVerses(versesData as RawVerse[]), []);
+  const [verses, setVerses] = useState<RawVerse[] | null>(null);
 
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const [activeVerseIndices, setActiveVerseIndices] = useState({
@@ -72,7 +88,12 @@ function MainApp() {
 
   const horizontalContainerRef = useRef<HTMLDivElement | null>(null);
   const categories = ['For You', 'Strength', 'Comfort', 'Love'];
-  const forYouVerseCount = verses.length;
+  const feedVerses = verses ?? [];
+  const forYouVerseCount = feedVerses.length;
+
+  useEffect(() => {
+    setVerses(getDailyShuffledVerses(versesData as RawVerse[]));
+  }, []);
 
   useEffect(() => {
     const completed = localStorage.getItem('verseverse_tutorial_completed');
@@ -116,10 +137,10 @@ function MainApp() {
   );
 
   const categoryVerses = {
-    'For You': verses,
-    'Strength': verses.filter((v) => v.theme === 'Strength'),
-    'Comfort': verses.filter((v) => v.theme === 'Comfort'),
-    'Love': verses.filter((v) => v.theme === 'Love'),
+    'For You': feedVerses,
+    'Strength': feedVerses.filter((v) => v.theme === 'Strength'),
+    'Comfort': feedVerses.filter((v) => v.theme === 'Comfort'),
+    'Love': feedVerses.filter((v) => v.theme === 'Love'),
   };
 
   const handleHorizontalScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -262,6 +283,8 @@ function MainApp() {
             translation={preferredTranslation}
             onOpenComments={setCommentsOpenFor}
           />
+        ) : !verses ? (
+          <FeedLoadingState />
         ) : (
           <div
             ref={horizontalContainerRef}

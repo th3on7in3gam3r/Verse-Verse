@@ -10,13 +10,16 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  password     String
-  name         String
-  createdAt    DateTime      @default(now())
-  prayers      Prayer[]
-  savedPrayers SavedPrayer[]
+  id                String          @id @default(cuid())
+  email             String          @unique
+  password          String
+  name              String
+  createdAt         DateTime        @default(now())
+  streakCount       Int             @default(0)
+  lastStreakDateKey String?
+  prayers           Prayer[]
+  savedPrayers      SavedPrayer[]
+  streakDays        UserStreakDay[]
 }
 
 model Prayer {
@@ -46,4 +49,15 @@ model VerseStat {
   verseId   String   @id
   amenCount Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+model UserStreakDay {
+  id        String   @id @default(cuid())
+  dateKey   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
 }

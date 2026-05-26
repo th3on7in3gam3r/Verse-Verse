@@ -93,14 +93,17 @@ export default function VerseOfTheDay() {
     if (isCompleting || isTodayCompleted()) return;
     setIsCompleting(true);
 
-    const result = markTodayCompleted();
+    try {
+      const result = await markTodayCompleted();
 
-    if (result.streakIncreased) {
-      fireCelebration();
+      if (result.streakIncreased) {
+        fireCelebration();
+      }
+
+      dismissCard();
+    } finally {
+      setIsCompleting(false);
     }
-
-    dismissCard();
-    setIsCompleting(false);
   };
 
   if (!showCard) return null;
