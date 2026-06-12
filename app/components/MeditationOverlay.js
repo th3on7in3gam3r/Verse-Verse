@@ -99,7 +99,7 @@ export default function MeditationOverlay({ verse, onClose }) {
   const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-between p-6 text-white backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[80] bg-black/95 flex flex-col items-center justify-between p-6 text-white backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="w-full max-w-lg flex items-center justify-between mt-4">

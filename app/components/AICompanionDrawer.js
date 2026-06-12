@@ -140,11 +140,11 @@ export default function AICompanionDrawer({ isOpen, onClose }) {
       {isOpen && (
         <div 
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-in fade-in duration-200"
         />
       )}
 
-      <div className={`fixed inset-y-0 right-0 z-50 bg-gray-950 text-white w-full md:max-w-md transition-all duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 right-0 z-[70] bg-gray-950 text-white w-full md:max-w-md transition-all duration-300 ease-in-out ${
         isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       } h-screen flex flex-col border-l border-gray-900 shadow-2xl`}>
         
