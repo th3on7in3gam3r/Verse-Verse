@@ -1,4 +1,11 @@
-export const MISSING_BIBLE_API_KEY = 'MISSING_BIBLE_API_KEY';
+export class BibleApiKeyMissingError extends Error {
+  readonly code = 'MISSING_API_KEY' as const;
+
+  constructor() {
+    super('Bible API key is not configured');
+    this.name = 'BibleApiKeyMissingError';
+  }
+}
 
 const API_BIBLE_KEY =
   process.env.BIBLE_API_KEY ||
@@ -37,10 +44,10 @@ export type BibleApiErrorPayload = {
 export function classifyBibleError(error: unknown): BibleApiErrorPayload & { status: number } {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (message === MISSING_BIBLE_API_KEY) {
+  if (error instanceof BibleApiKeyMissingError) {
     return {
       status: 503,
-      code: 'MISSING_API_KEY',
+      code: error.code,
       error:
         'Bible API is not configured. Add BIBLE_API_KEY to your .env file and restart the dev server.',
     };
@@ -153,7 +160,7 @@ function normalizeVersePayload(payload: any, translation: BibleTranslationKey): 
 
 async function fetchBibleApi(path: string, params: Record<string, string>) {
   if (!API_BIBLE_KEY) {
-    throw new Error(MISSING_BIBLE_API_KEY);
+    throw new BibleApiKeyMissingError();
   }
 
   const url = new URL(path, API_BIBLE_BASE_URL);
