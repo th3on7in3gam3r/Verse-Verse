@@ -1,4 +1,5 @@
 import './globals.css';
+import Script from 'next/script';
 import { Inter, Lora } from 'next/font/google';
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
@@ -36,6 +37,12 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${inter.variable} ${lora.variable}`}>
       <body className={inter.className}>
         {children}
+        <Script
+          defer
+          src="https://pulse-5o1m.onrender.com/pulse.js"
+          data-site="verse-verse-biblefunland-com"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
