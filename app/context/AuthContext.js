@@ -98,6 +98,11 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     setIsAuthModalOpen(false);
 
+    // Custom auth (no Clerk) — fire Pulse signup conversion once per new account
+    if (typeof window !== 'undefined' && window.Pulse?.track) {
+      window.Pulse.track('signup');
+    }
+
     if (authSuccessCallback) {
       authSuccessCallback(data.user);
       setAuthSuccessCallback(null);

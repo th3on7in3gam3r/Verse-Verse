@@ -1,6 +1,6 @@
 import './globals.css';
-import Script from 'next/script';
 import { Inter, Lora } from 'next/font/google';
+import PulsePageview from './components/PulsePageview';
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 // Declaring fonts here lets Next.js preload them correctly and eliminates the
@@ -35,14 +35,18 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${lora.variable}`}>
-      <body className={inter.className}>
-        {children}
-        <Script
+      <head>
+        {/* Pulse Growth Intelligence — must be server-rendered in <head> (not afterInteractive) */}
+        <script
           defer
           src="https://pulse-5o1m.onrender.com/pulse.js"
-          data-site="verse-verse-biblefunland-com"
-          strategy="afterInteractive"
+          data-site="site_mt9nnl7q"
+          data-host="https://pulse-5o1m.onrender.com"
         />
+      </head>
+      <body className={inter.className}>
+        {children}
+        <PulsePageview />
       </body>
     </html>
   );
